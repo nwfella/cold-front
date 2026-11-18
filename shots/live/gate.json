@@ -1,0 +1,221 @@
+{
+  "pass": 43,
+  "total": 43,
+  "results": [
+    {
+      "name": "no external <script>/<link> resources",
+      "ok": true,
+      "detail": "inline only"
+    },
+    {
+      "name": "no runtime fetch() calls",
+      "ok": true,
+      "detail": "offline-capable"
+    },
+    {
+      "name": "boot: window.ART exposed",
+      "ok": true,
+      "detail": "1.0"
+    },
+    {
+      "name": "boot: no JS error in title",
+      "ok": true,
+      "detail": "COLD FRONT — Modern Artillery Duel"
+    },
+    {
+      "name": "render: canvas painted (non-blank)",
+      "ok": true,
+      "detail": "{\"w\":1418,\"h\":802,\"mean\":29,\"unique\":66,\"brightPct\":0}"
+    },
+    {
+      "name": "render: sky gradient present",
+      "ok": true,
+      "detail": "66 colour buckets"
+    },
+    {
+      "name": "determinism: same seed -> same terrain",
+      "ok": true,
+      "detail": "2026665363 vs 2026665363"
+    },
+    {
+      "name": "determinism: different seed -> different terrain",
+      "ok": true,
+      "detail": "2026665363 vs 185916214"
+    },
+    {
+      "name": "determinism: forced seed honoured",
+      "ok": true,
+      "detail": "424242"
+    },
+    {
+      "name": "match start: aiming, full hp",
+      "ok": true,
+      "detail": "[100,100]"
+    },
+    {
+      "name": "units are separated",
+      "ok": true,
+      "detail": "p0 x vs p1 x: 209/1388"
+    },
+    {
+      "name": "controls: angle + velocity reach HUD",
+      "ok": true,
+      "detail": "{\"a\":\"72.5°\",\"p\":\"88\",\"range\":\"72.5\",\"st\":\"72.5/88\"}"
+    },
+    {
+      "name": "keyboard: arrows adjust aim",
+      "ok": true,
+      "detail": "{\"before\":72.5,\"mid\":73.5,\"power\":93}"
+    },
+    {
+      "name": "controls: slider input applied",
+      "ok": true,
+      "detail": "33"
+    },
+    {
+      "name": "ballistics: solved shot damages the target",
+      "ok": true,
+      "detail": "dmg 24"
+    },
+    {
+      "name": "ballistics: shot resolves within budget",
+      "ok": true,
+      "detail": "114 frames"
+    },
+    {
+      "name": "terrain: crater carved by impact",
+      "ok": true,
+      "detail": "-1461384387 -> 884756893"
+    },
+    {
+      "name": "damage: wild shot misses (falloff works)",
+      "ok": true,
+      "detail": "dmg 0"
+    },
+    {
+      "name": "weapons: ammo decrements on fire",
+      "ok": true,
+      "detail": "3 -> 2"
+    },
+    {
+      "name": "weapons: cluster splits into multiple projectiles",
+      "ok": true,
+      "detail": "max concurrent 3"
+    },
+    {
+      "name": "weapons: railgun is flat (no gravity, no wind)",
+      "ok": true,
+      "detail": "{\"vy0\":-907.85,\"vx0\":907.85,\"vy1\":-907.85,\"vx1\":907.85}"
+    },
+    {
+      "name": "turn: out-of-range shot resolves and advances",
+      "ok": true,
+      "detail": "{\"mode\":\"aim\",\"turn\":1,\"projs\":0,\"log\":1}"
+    },
+    {
+      "name": "AI: fires within its thinking window",
+      "ok": true,
+      "detail": "{\"shots\":1,\"turn\":0,\"mode\":\"aim\",\"err\":0.48}"
+    },
+    {
+      "name": "AI: hands the turn back",
+      "ok": true,
+      "detail": "turn 0 mode aim"
+    },
+    {
+      "name": "AI: every volley lands on the enemy side",
+      "ok": true,
+      "detail": "6/6 [[201],[204],[213,18,267],[262],[149],[117,11,77]]"
+    },
+    {
+      "name": "AI: never damages itself with its own shell",
+      "ok": true,
+      "detail": "[0,0,0,0,0,0]"
+    },
+    {
+      "name": "round: killing blow ends the round",
+      "ok": true,
+      "detail": "{\"wins\":[1,0],\"mode\":\"roundover\",\"alive\":[true,false]}"
+    },
+    {
+      "name": "round: ammo + hp reset for a new round",
+      "ok": true,
+      "detail": "{\"ammo\":[null,3,2],\"hp\":100,\"round\":1}"
+    },
+    {
+      "name": "escalation: metal storm impacts and reshapes terrain",
+      "ok": true,
+      "detail": "{\"carved\":true,\"cleared\":true,\"hp0\":[100,100]}"
+    },
+    {
+      "name": "turn clock: expires into an auto-shot",
+      "ok": true,
+      "detail": "{\"fired\":1,\"mode\":\"fly\"}"
+    },
+    {
+      "name": "settings: persisted to localStorage",
+      "ok": true,
+      "detail": "{\"clock\":true,\"has\":true}"
+    },
+    {
+      "name": "terrain: impact leaves a carved crater",
+      "ok": true,
+      "detail": "slope sum 223"
+    },
+    {
+      "name": "mobile: viewport emulated at 390x844",
+      "ok": true,
+      "detail": "390x844"
+    },
+    {
+      "name": "mobile: canvas sized by DPR",
+      "ok": true,
+      "detail": "canvas 780"
+    },
+    {
+      "name": "mobile: command bar fits the viewport",
+      "ok": true,
+      "detail": "w 366"
+    },
+    {
+      "name": "mobile: no horizontal overflow",
+      "ok": true,
+      "detail": "cardsIn true"
+    },
+    {
+      "name": "landscape phone: viewport 844x390",
+      "ok": true,
+      "detail": "844x390"
+    },
+    {
+      "name": "landscape phone: command bar inside viewport",
+      "ok": true,
+      "detail": "cmdIn true"
+    },
+    {
+      "name": "landscape phone: HUD rows do not overlap",
+      "ok": true,
+      "detail": "noOverlap true"
+    },
+    {
+      "name": "soak: 6000 ticks without a page error",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "name": "soak: match kept progressing",
+      "ok": true,
+      "detail": "ticks 9869"
+    },
+    {
+      "name": "no uncaught exceptions",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "no console errors",
+      "ok": true,
+      "detail": ""
+    }
+  ]
+}

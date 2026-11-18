@@ -10,7 +10,9 @@ const path = require('path');
 const os = require('os');
 
 const ROOT = path.resolve(__dirname, '..');
-const SHOTS = path.join(ROOT, 'shots');
+// GATE_URL=https://user.github.io/repo/ verifies the DEPLOYED artifact instead of the working copy
+const REMOTE = (process.env.GATE_URL || '').replace(/\/?$/, '/');
+const SHOTS = REMOTE ? path.join(ROOT, 'shots', 'live') : path.join(ROOT, 'shots');
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.json': 'application/json', '.svg': 'image/svg+xml' };
 
 function findChrome() {
@@ -60,7 +62,7 @@ async function waitFor(fn, ms, label) {
 
 (async () => {
   const chromePath = findChrome();
-  const { srv, port } = await serve();
+  const { srv, port } = REMOTE ? { srv: null, port: 0 } : await serve();
   const tmpProfile = fs.mkdtempSync(path.join(os.tmpdir(), 'cf-gate-'));
   const dbgPort = 9222 + ((Math.random() * 500) | 0);
   const chrome = spawn(chromePath, [
@@ -72,7 +74,7 @@ async function waitFor(fn, ms, label) {
 
   const cleanup = () => {
     try { chrome.kill('SIGKILL'); } catch (e) {}
-    try { srv.close(); } catch (e) {}
+    try { if (srv) srv.close(); } catch (e) {}
     try { fs.rmSync(tmpProfile, { recursive: true, force: true }); } catch (e) {}
   };
 
@@ -131,7 +133,9 @@ async function waitFor(fn, ms, label) {
     check('no external <script>/<link> resources', !/(src|href)\s*=\s*["']https?:/i.test(html), 'inline only');
     check('no runtime fetch() calls', !/[^.\w]fetch\s*\(/.test(html.replace(/\/\*[\s\S]*?\*\//g, '')), 'offline-capable');
 
-    await send('Page.navigate', { url: `http://127.0.0.1:${port}/index.html?cb=${Date.now()}` });
+    const target_url = REMOTE ? `${REMOTE}index.html?cb=${Date.now()}` : `http://127.0.0.1:${port}/index.html?cb=${Date.now()}`;
+    console.log((REMOTE ? 'GATING LIVE: ' : 'GATING LOCAL: ') + target_url + '\n');
+    await send('Page.navigate', { url: target_url });
     await waitFor(async () => evalIn('!!(window.ART && window.ART.state && window.ART.state.players.length)'), 15000, 'boot');
     check('boot: window.ART exposed', true, await evalIn('ART.version'));
 

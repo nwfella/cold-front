@@ -120,6 +120,9 @@ shots/                  # screenshots captured by the gate
 sh build.sh          # inline src/ -> index.html, then node --check
 node scripts/gate.js # boot it in headless Chrome, assert, screenshot, exit 0/1
 node scripts/probe.js "ART.snapshot()"   # poke the live game from the CLI
+
+# gate the DEPLOYED artifact, not the working copy
+GATE_URL=https://nwfella.github.io/cold-front/ node scripts/gate.js
 ```
 
 The game exposes a test surface in the shipped file — harmless in production and the reason the gate can be this blunt:
