@@ -11,7 +11,8 @@ const os = require('os');
 
 const ROOT = path.resolve(__dirname, '..');
 // GATE_URL=https://user.github.io/repo/ verifies the DEPLOYED artifact instead of the working copy
-const REMOTE = (process.env.GATE_URL || '').replace(/\/?$/, '/');
+const RAW_URL = process.env.GATE_URL || '';
+const REMOTE = RAW_URL ? RAW_URL.replace(/\/?$/, '/') : '';  // '' must stay falsey
 const SHOTS = REMOTE ? path.join(ROOT, 'shots', 'live') : path.join(ROOT, 'shots');
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.json': 'application/json', '.svg': 'image/svg+xml' };
 
@@ -390,6 +391,23 @@ async function waitFor(fn, ms, label) {
       return { roughness: Math.round(deep) };
     })()`);
     check('terrain: impact leaves a carved crater', crater.roughness > 0, 'slope sum ' + crater.roughness);
+
+    // ---- overlay geometry: the shot log must never sit on a battery
+    const logPos = await evalIn(`(() => {
+      ART.start('ai', 4242); ART.setTurn(0);
+      const a = ART.state.players[0], b = ART.state.players[1];
+      const lg = document.getElementById('log').getBoundingClientRect();
+      const pa = ART.screenOf(a.x, a.y - 30), pb = ART.screenOf(b.x, b.y - 30);
+      const inside = (p) => p.x >= lg.left - 8 && p.x <= lg.right + 8 && p.y >= lg.top - 8 && p.y <= lg.bottom + 8;
+      return {
+        log: [Math.round(lg.left), Math.round(lg.top), Math.round(lg.right), Math.round(lg.bottom)],
+        tankA: [Math.round(pa.x), Math.round(pa.y)], tankB: [Math.round(pb.x), Math.round(pb.y)],
+        coversA: inside(pa), coversB: inside(pb),
+        inTopBand: lg.top < innerHeight * 0.4
+      };
+    })()`);
+    check('overlay: shot log is top-left and clear of both batteries',
+      !logPos.coversA && !logPos.coversB && logPos.inTopBand, JSON.stringify(logPos));
 
     // ---- mobile layout + screenshot
     await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });

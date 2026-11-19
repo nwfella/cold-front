@@ -133,6 +133,11 @@ window.ART = {
   setWind(v) { G.wind = v; updateHud(); return G.wind; },
   setHp(i, v) { G.players[i].hp = v; updateHud(); return G.players[i].hp; },
   setTurn(i) { G.turn = i; G.mode = 'aim'; updateHud(); return G.turn; },
+  screenOf(x, y) {
+    const s = worldToScreen(x, y);
+    const r = UI.canvas.getBoundingClientRect();
+    return { x: s.x + r.left, y: s.y + r.top };
+  },
   terrainAt(x) { return surfaceAt(x); },
   terrainHash() {
     let h = 0;

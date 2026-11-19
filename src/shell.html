@@ -100,7 +100,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border:3px solid var(
 #cmd.off #fireBtn{background:rgba(255,255,255,.08);color:var(--ink-faint);box-shadow:none}
 
 /* log */
-#log{position:absolute;left:14px;bottom:104px;width:200px;display:flex;flex-direction:column;gap:4px;pointer-events:none;font-family:var(--mono);font-size:9.5px;letter-spacing:.03em;color:var(--ink-faint);opacity:.9}
+#log{position:absolute;left:14px;top:calc(118px + env(safe-area-inset-top));width:200px;display:flex;flex-direction:column;gap:4px;pointer-events:none;font-family:var(--mono);font-size:9.5px;letter-spacing:.03em;color:var(--ink-faint);opacity:.9}
 #log div{padding:3px 7px;border-radius:5px;background:rgba(8,11,17,.5);border-left:2px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;animation:slideIn .3s ease-out}
 @keyframes slideIn{from{opacity:0;transform:translateX(-8px)}}
 #log div.hit{border-left-color:var(--good);color:#c8f7dc}
