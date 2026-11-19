@@ -349,6 +349,25 @@ async function waitFor(fn, ms, label) {
     })()`);
     check('escalation: metal storm impacts and reshapes terrain', meteor.carved && meteor.cleared, JSON.stringify(meteor));
 
+    // ---- the storm may maul a player, never finish one
+    const stormFloor = await evalIn(`(() => {
+      const run = (hp) => {
+        ART.start('ai', 31); ART.setTurn(0);
+        const p = ART.state.players[0];
+        p.hp = hp;
+        ART.meteorAt(p.x);
+        ART.tick(90);
+        return { hp: Math.round(p.hp), alive: p.alive };
+      };
+      return { from30: run(30), from26: run(26), from100: run(100) };
+    })()`);
+    check('storm: cannot drop a player below the floor',
+      stormFloor.from30.hp >= 25 && stormFloor.from26.hp >= 25, JSON.stringify(stormFloor));
+    check('storm: never finishes a player', stormFloor.from30.alive && stormFloor.from26.alive,
+      'alive ' + stormFloor.from30.alive + '/' + stormFloor.from26.alive);
+    check('storm: still hurts a healthy player', stormFloor.from100.hp < 100,
+      'hp ' + stormFloor.from100.hp);
+
     // ---- turn clock auto-fires when enabled
     const clock = await evalIn(`(() => {
       ART.start('ai', 31); ART.setTurn(0);

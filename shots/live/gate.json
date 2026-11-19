@@ -1,6 +1,6 @@
 {
-  "pass": 43,
-  "total": 43,
+  "pass": 44,
+  "total": 44,
   "results": [
     {
       "name": "no external <script>/<link> resources",
@@ -25,12 +25,12 @@
     {
       "name": "render: canvas painted (non-blank)",
       "ok": true,
-      "detail": "{\"w\":1418,\"h\":802,\"mean\":29,\"unique\":66,\"brightPct\":0}"
+      "detail": "{\"w\":1418,\"h\":802,\"mean\":27.3,\"unique\":69,\"brightPct\":0}"
     },
     {
       "name": "render: sky gradient present",
       "ok": true,
-      "detail": "66 colour buckets"
+      "detail": "69 colour buckets"
     },
     {
       "name": "determinism: same seed -> same terrain",
@@ -161,6 +161,11 @@
       "name": "terrain: impact leaves a carved crater",
       "ok": true,
       "detail": "slope sum 223"
+    },
+    {
+      "name": "overlay: shot log is top-left and clear of both batteries",
+      "ok": true,
+      "detail": "{\"log\":[14,118,214,118],\"tankA\":[191,527],\"tankB\":[1267,551],\"coversA\":false,\"coversB\":false,\"inTopBand\":true}"
     },
     {
       "name": "mobile: viewport emulated at 390x844",

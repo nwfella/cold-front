@@ -299,6 +299,7 @@ const H = 900;             // world height
 const GRAV = 520;          // world px / s²
 const WIND_MAX = 62;       // world px / s² at full gust
 const TICK = 1 / 60;       // fixed logic step
+const METEOR_FLOOR = 25;   // metal storm can maul you down to here, never past it
 const DEG = Math.PI / 180;
 const DPR_MAX = 2;
 
@@ -832,7 +833,7 @@ function settleUnits(dt) {
         if (fell > 80) {
           const dmg = Math.round((fell - 80) * 0.22);
           if (dmg > 0) {
-            damageUnit(p, dmg, 'TERRAIN COLLAPSE');
+            damageUnit(p, dmg, 'TERRAIN COLLAPSE', null, G.stormGrace > 0 ? METEOR_FLOOR : 0);
             spawnDebris(p.x, g, 14, '#6b5a4a');
           }
         }
@@ -965,9 +966,15 @@ function updateParticles(dt) {
 }
 
 /* ---------------------------------------------------------------- damage */
-function damageUnit(target, amount, cause, source) {
+function damageUnit(target, amount, cause, source, floor) {
   if (!target.alive) return 0;
-  const dmg = Math.max(1, Math.round(amount));
+  let dmg = Math.max(1, Math.round(amount));
+  if (floor) {
+    // environmental damage that must never finish a player: clamp to the floor
+    const room = Math.max(0, target.hp - floor);
+    if (room <= 0) return 0;        // already at the floor — nothing left to take
+    dmg = Math.min(dmg, room);
+  }
   target.hp = Math.max(0, target.hp - dmg);
   target.flash = 1;
   target.shake = 1;
@@ -1218,20 +1225,21 @@ function explode(x, y, proj, hitTarget) {
     if (d < reach) {
       const f = Math.pow(1 - d / reach, 1.45);
       const amt = Math.max(3, dmg * f);
-      damageUnit(t, amt, 'blast', src);
+      damageUnit(t, amt, 'blast', src, proj.floor);
       if (t.i !== proj.team) enemyDmg += Math.round(amt);
       if (f > 0.55) { hitAny = true; if (t === hitTarget) direct = true; }
     }
   }
 
+  const st = proj.label || tagOf(src);
   if (direct) {
-    pushLog(tagOf(src) + ' \u25B8 ' + tagOf(hitTarget) + '   \u2212' + enemyDmg, 'hit');
+    pushLog(st + ' \u25B8 ' + tagOf(hitTarget) + '   \u2212' + enemyDmg, 'hit');
     addText(hitTarget.x, hitTarget.y - 108, 'DIRECT HIT', '#ffe9a8', 17);
     src.hits++; G.stats.hits++;
   } else if (hitAny) {
-    pushLog(tagOf(src) + ' \u25B8 NEAR MISS   \u2212' + enemyDmg, 'hit');
+    pushLog(st + ' \u25B8 NEAR MISS   \u2212' + enemyDmg, 'hit');
   } else {
-    pushLog(tagOf(src) + ' \u25B8 CRATER', 'miss');
+    pushLog(st + ' \u25B8 CRATER', 'miss');
   }
   if (proj.dist > src.longest) src.longest = proj.dist;
   if (proj.dist > G.stats.longest) G.stats.longest = proj.dist;
@@ -1932,6 +1940,7 @@ function nextTurn() {
   // escalation
   G.turnCount++;
   if (G.turnCount >= 10) {
+    if (!G.storm) toast('METAL STORM — CANNOT FINISH YOU', 2600);
     G.storm = 1;
     G.meteor = { x: rr(200, W - 200), t: 2.6 };
   }
@@ -2123,9 +2132,13 @@ function updateGame(dt) {
     if (G.meteor.t <= 0) {
       const mx = G.meteor.x;
       const my = surfaceAt(mx);
-      const fake = { w: WEAPONS[2], r: 96, dmg: 34, team: 1 - G.turn, dist: 0, bomblet: true };
+      const fake = {
+        w: WEAPONS[2], r: 96, dmg: 34, team: 1 - G.turn, dist: 0, bomblet: true,
+        floor: METEOR_FLOOR, label: 'STORM'
+      };
       explode(mx, my - 10, fake, null);
       carve(mx, my - 10, 88);
+      G.stormGrace = 2.2;   // rubble it knocks loose can't finish anyone either
       addShake(24);
       for (let i = 0; i < 3; i++) {
         px(mx, my - 4, 16, { speed: 420, spread: 1.2, angle: -1.57, life: 0.8, size: 4, colors: ['#ffd27a', '#ff8a5c'], grav: 420, drag: 0.96 });
@@ -2134,6 +2147,8 @@ function updateGame(dt) {
       G.meteor = null;
     }
   }
+
+  if (G.stormGrace > 0) G.stormGrace = Math.max(0, G.stormGrace - dt);
 
   updateParticles(dt);
   // trail ghosts for the active player fill from the live projectile
@@ -2621,6 +2636,7 @@ window.ART = {
   setWind(v) { G.wind = v; updateHud(); return G.wind; },
   setHp(i, v) { G.players[i].hp = v; updateHud(); return G.players[i].hp; },
   setTurn(i) { G.turn = i; G.mode = 'aim'; updateHud(); return G.turn; },
+  meteorAt(x) { G.meteor = { x: x === undefined ? 800 : x, t: 0.15 }; return G.meteor; },
   screenOf(x, y) {
     const s = worldToScreen(x, y);
     const r = UI.canvas.getBoundingClientRect();

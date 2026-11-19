@@ -179,7 +179,7 @@ function settleUnits(dt) {
         if (fell > 80) {
           const dmg = Math.round((fell - 80) * 0.22);
           if (dmg > 0) {
-            damageUnit(p, dmg, 'TERRAIN COLLAPSE');
+            damageUnit(p, dmg, 'TERRAIN COLLAPSE', null, G.stormGrace > 0 ? METEOR_FLOOR : 0);
             spawnDebris(p.x, g, 14, '#6b5a4a');
           }
         }

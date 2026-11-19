@@ -80,6 +80,7 @@ function nextTurn() {
   // escalation
   G.turnCount++;
   if (G.turnCount >= 10) {
+    if (!G.storm) toast('METAL STORM — CANNOT FINISH YOU', 2600);
     G.storm = 1;
     G.meteor = { x: rr(200, W - 200), t: 2.6 };
   }
@@ -271,9 +272,13 @@ function updateGame(dt) {
     if (G.meteor.t <= 0) {
       const mx = G.meteor.x;
       const my = surfaceAt(mx);
-      const fake = { w: WEAPONS[2], r: 96, dmg: 34, team: 1 - G.turn, dist: 0, bomblet: true };
+      const fake = {
+        w: WEAPONS[2], r: 96, dmg: 34, team: 1 - G.turn, dist: 0, bomblet: true,
+        floor: METEOR_FLOOR, label: 'STORM'
+      };
       explode(mx, my - 10, fake, null);
       carve(mx, my - 10, 88);
+      G.stormGrace = 2.2;   // rubble it knocks loose can't finish anyone either
       addShake(24);
       for (let i = 0; i < 3; i++) {
         px(mx, my - 4, 16, { speed: 420, spread: 1.2, angle: -1.57, life: 0.8, size: 4, colors: ['#ffd27a', '#ff8a5c'], grav: 420, drag: 0.96 });
@@ -282,6 +287,8 @@ function updateGame(dt) {
       G.meteor = null;
     }
   }
+
+  if (G.stormGrace > 0) G.stormGrace = Math.max(0, G.stormGrace - dt);
 
   updateParticles(dt);
   // trail ghosts for the active player fill from the live projectile

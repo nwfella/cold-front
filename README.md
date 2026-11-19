@@ -44,7 +44,9 @@ Most browser artillery games are Gorillas with a fresh coat of paint. This one t
 
 Two modes: **duel the AI** (Recruit / Veteran / Elite) or **2 players** hotseat on one device.
 
-Wind changes every turn and is shown in kN. Direct hits hurt; splash falls off with distance; a shell that catches your own ramp will hurt you too. After 10 turns the **Metal Storm** starts dropping meteors on the field — the endgame comes to you.
+After 10 turns the **Metal Storm** starts dropping meteors. It reshapes the field and hurts, but it is deliberately non-lethal: storm damage can take you down to 25 HP and no further, and rubble it knocks loose is floored for the same window. You can lose the round to your opponent, never to the weather.
+
+Wind changes every turn and is shown in kN. Direct hits hurt; splash falls off with distance; a shell that catches your own ramp will hurt you too.
 
 ---
 

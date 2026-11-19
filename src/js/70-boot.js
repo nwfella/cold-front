@@ -133,6 +133,7 @@ window.ART = {
   setWind(v) { G.wind = v; updateHud(); return G.wind; },
   setHp(i, v) { G.players[i].hp = v; updateHud(); return G.players[i].hp; },
   setTurn(i) { G.turn = i; G.mode = 'aim'; updateHud(); return G.turn; },
+  meteorAt(x) { G.meteor = { x: x === undefined ? 800 : x, t: 0.15 }; return G.meteor; },
   screenOf(x, y) {
     const s = worldToScreen(x, y);
     const r = UI.canvas.getBoundingClientRect();

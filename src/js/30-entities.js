@@ -84,9 +84,15 @@ function updateParticles(dt) {
 }
 
 /* ---------------------------------------------------------------- damage */
-function damageUnit(target, amount, cause, source) {
+function damageUnit(target, amount, cause, source, floor) {
   if (!target.alive) return 0;
-  const dmg = Math.max(1, Math.round(amount));
+  let dmg = Math.max(1, Math.round(amount));
+  if (floor) {
+    // environmental damage that must never finish a player: clamp to the floor
+    const room = Math.max(0, target.hp - floor);
+    if (room <= 0) return 0;        // already at the floor — nothing left to take
+    dmg = Math.min(dmg, room);
+  }
   target.hp = Math.max(0, target.hp - dmg);
   target.flash = 1;
   target.shake = 1;
@@ -337,20 +343,21 @@ function explode(x, y, proj, hitTarget) {
     if (d < reach) {
       const f = Math.pow(1 - d / reach, 1.45);
       const amt = Math.max(3, dmg * f);
-      damageUnit(t, amt, 'blast', src);
+      damageUnit(t, amt, 'blast', src, proj.floor);
       if (t.i !== proj.team) enemyDmg += Math.round(amt);
       if (f > 0.55) { hitAny = true; if (t === hitTarget) direct = true; }
     }
   }
 
+  const st = proj.label || tagOf(src);
   if (direct) {
-    pushLog(tagOf(src) + ' \u25B8 ' + tagOf(hitTarget) + '   \u2212' + enemyDmg, 'hit');
+    pushLog(st + ' \u25B8 ' + tagOf(hitTarget) + '   \u2212' + enemyDmg, 'hit');
     addText(hitTarget.x, hitTarget.y - 108, 'DIRECT HIT', '#ffe9a8', 17);
     src.hits++; G.stats.hits++;
   } else if (hitAny) {
-    pushLog(tagOf(src) + ' \u25B8 NEAR MISS   \u2212' + enemyDmg, 'hit');
+    pushLog(st + ' \u25B8 NEAR MISS   \u2212' + enemyDmg, 'hit');
   } else {
-    pushLog(tagOf(src) + ' \u25B8 CRATER', 'miss');
+    pushLog(st + ' \u25B8 CRATER', 'miss');
   }
   if (proj.dist > src.longest) src.longest = proj.dist;
   if (proj.dist > G.stats.longest) G.stats.longest = proj.dist;

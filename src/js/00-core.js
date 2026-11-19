@@ -8,6 +8,7 @@ const H = 900;             // world height
 const GRAV = 520;          // world px / s²
 const WIND_MAX = 62;       // world px / s² at full gust
 const TICK = 1 / 60;       // fixed logic step
+const METEOR_FLOOR = 25;   // metal storm can maul you down to here, never past it
 const DEG = Math.PI / 180;
 const DPR_MAX = 2;
 
