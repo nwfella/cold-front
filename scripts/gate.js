@@ -341,6 +341,71 @@ async function waitFor(fn, ms, label) {
     check('death: turret shard is thrown clear', death.turretMoved === true, 'moved ' + death.turretMoved);
     check('death: victim is down', death.victimAlive === false, 'alive ' + death.victimAlive);
 
+    // ---- HUD: bigger wind readout
+    const windHud = await evalIn(`(() => {
+      const el = document.getElementById('windTxt');
+      const cs = getComputedStyle(el);
+      return { size: parseFloat(cs.fontSize), text: el.textContent.trim() };
+    })()`);
+    check('hud: wind readout enlarged (+85%)', windHud.size >= 19 && windHud.size <= 20.5, windHud.size + 'px — "' + windHud.text + '"');
+
+    // ---- weapon chips readable at a glance
+    const chips = await evalIn(`(() => {
+      const c = [...document.querySelectorAll('#weapons .wchip')];
+      return {
+        n: c.length,
+        icons: c.filter((x) => x.querySelector('svg')).length,
+        names: c.map((x) => (x.querySelector('.wname') || {}).textContent || ''),
+        counts: c.map((x) => (x.querySelector('.cnt') || {}).textContent || ''),
+        desc: (document.getElementById('wdesc').textContent || '').trim()
+      };
+    })()`);
+    check('hud: each weapon chip shows an icon, name and ammo',
+      chips.n === 5 && chips.icons === 5 && chips.names.every((n) => n.length > 0),
+      chips.names.join('/') + ' — ' + chips.counts.join('/'));
+    check('hud: selected weapon has a plain-language line', chips.desc.length > 12, chips.desc.slice(0, 58));
+
+    // ---- camera must not be pushed off the unit by the blast
+    const camLock = await evalIn(`(() => {
+      ART.start('ai', 2468); ART.setTurn(0);
+      const p = ART.state.players[1];
+      ART.detonate(1);
+      let margin = 1e9, zmax = 0, smax = 0;
+      for (let i = 0; i < 110; i++) {
+        ART.tick(1);
+        const s = ART.screenOf(p.x, p.y - 30);
+        margin = Math.min(margin, s.x, innerWidth - s.x, s.y, innerHeight - s.y);
+        zmax = Math.max(zmax, ART.cam.z);
+        smax = Math.max(smax, ART.cam.shake);
+      }
+      return { margin: Math.round(margin), z: +zmax.toFixed(3), shake: Math.round(smax), w: innerWidth, h: innerHeight };
+    })()`);
+    check('camera: blast never pushes the unit out of frame', camLock.margin > 40, JSON.stringify(camLock));
+    check('camera: no zoom drift after a kill', camLock.z === 1, 'peak zoom ' + camLock.z);
+
+    // ---- arsenal previews
+    const arsenal = await evalIn(`(async () => {
+      document.getElementById('btnArsenal').click();
+      const cvs = [...document.querySelectorAll('#arsenalList canvas')];
+      const sample = () => cvs.map((c) => {
+        const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+        let s = 0;
+        for (let i = 0; i < d.length; i += 997) s += d[i] + d[i + 1];
+        return s;
+      });
+      const a = sample();
+      await new Promise((r) => setTimeout(r, 430));
+      const b = sample();
+      const nonBlank = a.filter((v) => v > 0).length;
+      const moving = a.filter((v, i) => v !== b[i]).length;
+      document.getElementById('btnCloseArsenal').click();
+      return { count: cvs.length, nonBlank, moving,
+               names: [...document.querySelectorAll('.arsName')].map((n) => n.textContent) };
+    })()`);
+    check('arsenal: one preview per weapon', arsenal.count === 5 && arsenal.names.length === 5, arsenal.names.join('/'));
+    check('arsenal: every preview renders', arsenal.nonBlank === 5, arsenal.nonBlank + '/5 painted');
+    check('arsenal: previews animate', arsenal.moving >= 3, arsenal.moving + '/5 moving');
+
     // ---- capture the burst for visual review
     await evalIn(`(() => {
       ART.start('ai', 5150); ART.setTurn(0);
@@ -479,6 +544,16 @@ async function waitFor(fn, ms, label) {
     })()`);
     check('overlay: shot log is top-left and clear of both batteries',
       !logPos.coversA && !logPos.coversB && logPos.inTopBand, JSON.stringify(logPos));
+
+    // ---- arsenal screenshot
+    await evalIn(`(async () => {
+      ART.start('ai', 4242); ART.setTurn(0);
+      document.getElementById('btnArsenal').click();
+      await new Promise((r) => setTimeout(r, 520));
+    })()`);
+    const shotArs = await send('Page.captureScreenshot', { format: 'png' });
+    fs.writeFileSync(path.join(SHOTS, 'arsenal.png'), Buffer.from(shotArs.data, 'base64'));
+    await evalIn('document.getElementById("btnCloseArsenal").click()');
 
     // ---- mobile layout + screenshot
     await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });

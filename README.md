@@ -15,8 +15,9 @@ Most browser artillery games are Gorillas with a fresh coat of paint. This one t
 - **Destructible heightmap terrain.** The ground is a 1600-column surface array. Each shell bites a circle out of it, scorches the rim, and the dirt stays gone. Shoot out a ridge and your next shot has a line it didn't have before — or drop the ground under an enemy and let gravity bill them for it (fall damage).
 - **Ballistics the AI actually understands.** The opponent solves the closed-form trajectory with wind, muzzle offset and terrain clearance, then degrades that answer by a per-difficulty error that shrinks as it learns your position. It lobs ridges instead of drilling them.
 - **Five weapons with real trade-offs.** Flat-firing railgun (no gravity, no wind, one round), apex-splitting cluster, terrain-shaping siege shell, ground-hugging roller.
+- **An arsenal you can watch.** Every weapon has a live preview in the field manual (`M`), each one running the game's own gravity, apex split and roll behaviour at small scale — so you can see what a cluster does before you spend one.
 - **Zero dependencies.** No frameworks, no build tooling, no assets, no network requests. 99 KB of HTML including CSS, audio and art. The icon set is rendered from the same shapes the game draws.
-- **Verified, not just written.** A zero-dependency Chrome DevTools Protocol gate drives the shipped file in a real browser: **43 checks** covering physics, AI behaviour, terrain destruction, weapon rules, layout at three viewports, and an unattended 6000-tick soak.
+- **Verified, not just written.** A zero-dependency Chrome DevTools Protocol gate drives the shipped file in a real browser: **61 checks** covering physics, AI behaviour, terrain destruction, weapon rules, layout at three viewports, and an unattended 6000-tick soak.
 
 ---
 
@@ -30,9 +31,9 @@ Most browser artillery games are Gorillas with a fresh coat of paint. This one t
 |---|---|
 | ![impact](shots/desktop-impact.png) | ![title](shots/title.png) |
 
-| A battery going up |
-|---|
-| ![kill](shots/desktop-kill.png) |
+| A battery going up | The field manual |
+|---|---|
+| ![kill](shots/desktop-kill.png) | ![arsenal](shots/arsenal.png) |
 
 ---
 

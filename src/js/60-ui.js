@@ -7,11 +7,28 @@ const UI = {};
 function cacheUI() {
   ['hud', 'p0card', 'p1card', 'p0hp', 'p1hp', 'p0fill', 'p1fill', 'p0ghost', 'p1ghost',
     'p0wins', 'p1wins', 'p0stat', 'p1stat', 'p0name', 'p1name',
-    'roundNum', 'turnLabel', 'windFill', 'windTxt', 'stormTxt', 'cmd', 'weapons',
+    'roundNum', 'turnLabel', 'windFill', 'windTxt', 'stormTxt', 'cmd', 'weapons', 'wdesc',
     'angleRange', 'powerRange', 'angleVal', 'powerVal', 'fireBtn', 'log', 'toast',
     'titleOv', 'settingsOv', 'roundOv', 'endOv', 'rotate', 'endStats', 'endTitle', 'endKicker',
     'roundTitle', 'roundKicker', 'roundSub'].forEach((k) => (UI[k] = $(k)));
   UI.canvas = $('game');
+}
+
+const WEAPON_ICONS = {
+  he: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="14" r="4.4"/><path d="M12 9.6V6M9.6 6h4.8"/></svg>',
+  cluster: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="7.5" r="2.4"/><circle cx="6.6" cy="16.5" r="2.4"/><circle cx="17.4" cy="16.5" r="2.4"/><path d="M12 2.6v2.5" stroke-linecap="round"/></svg>',
+  siege: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="7.2"/><circle cx="12" cy="12" r="2.4"/></svg>',
+  rail: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18.5L20 6"/><path d="M15.6 6H20v4.4"/></svg>',
+  roller: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="16.4" cy="16" r="3.1"/><path d="M3 8.5c3.4-4.6 8.2 2.6 10.4 6.2" stroke-linecap="round"/></svg>'
+};
+
+function weaponLine(i) {
+  const w = WEAPONS[i];
+  const p = activePlayer();
+  if (!w) return '';
+  const ammo = p ? p.ammo[i] : w.ammo;
+  const left = ammo === Infinity ? 'unlimited' : ammo + ' left';
+  return '<b>' + w.name + '</b> · ' + w.desc + ' · ' + left;
 }
 
 function buildWeapons() {
@@ -21,9 +38,14 @@ function buildWeapons() {
     b.className = 'wchip';
     b.style.setProperty('--wc', w.color);
     b.dataset.i = i;
-    b.innerHTML = w.short + '<span class="cnt">' + (w.ammo === Infinity ? '∞' : w.ammo) + '</span><kbd>' + w.keys + '</kbd>';
+    b.innerHTML = (WEAPON_ICONS[w.id] || '') +
+      '<span class="wname">' + w.short + '</span>' +
+      '<span class="cnt">' + (w.ammo === Infinity ? '∞' : '×' + w.ammo) + '</span>' +
+      '<kbd>' + w.keys + '</kbd>';
     b.title = w.name + ' — ' + w.desc;
     b.addEventListener('click', () => selectWeapon(i));
+    b.addEventListener('mouseenter', () => { if (UI.wdesc) UI.wdesc.innerHTML = weaponLine(i); });
+    b.addEventListener('mouseleave', () => { if (UI.wdesc && G.players.length) UI.wdesc.innerHTML = weaponLine(activePlayer().weapon); });
     UI.weapons.appendChild(b);
   });
 }
@@ -66,6 +88,7 @@ function updateHud() {
     if (cnt) cnt.textContent = ammo === Infinity ? '∞' : ammo;
   });
 
+  if (UI.wdesc) UI.wdesc.innerHTML = weaponLine(p.weapon);
   const human = !(G.turn === 1 && G.matchMode === 'ai');
   UI.cmd.classList.toggle('off', !(G.mode === 'aim' && human));
   renderLog();
@@ -121,6 +144,16 @@ function hideOverlays() {
   UI.settingsOv.classList.remove('show');
   UI.roundOv.classList.remove('show');
   UI.endOv.classList.remove('show');
+  if (typeof arsenalClose === 'function') arsenalClose();
+}
+
+function openArsenal() {
+  if (typeof arsenalOpen === 'function') arsenalOpen();
+  G.paused = true;
+}
+function closeArsenal() {
+  if (typeof arsenalClose === 'function') arsenalClose();
+  G.paused = false;
 }
 
 function showSettings() {
@@ -192,8 +225,15 @@ function bindInput() {
   window.addEventListener('keydown', (e) => {
     Audio2.ensure();
     if (e.key === 'Escape') {
+      const ars = document.getElementById('arsenalOv');
+      if (ars && ars.classList.contains('show')) { closeArsenal(); return; }
       if (UI.settingsOv.classList.contains('show')) { UI.settingsOv.classList.remove('show'); return; }
       if (G.matchOn) { showSettings(); return; }
+    }
+    if (e.key === 'm' || e.key === 'M' || e.key === '?') {
+      e.preventDefault();
+      openArsenal();
+      return;
     }
     if (!G.matchOn || G.mode !== 'aim') return;
     if (G.turn === 1 && G.matchMode === 'ai') return;
@@ -224,6 +264,12 @@ function bindInput() {
   $('btnAI').addEventListener('click', () => { hideOverlays(); startMatch('ai'); });
   $('btn2P').addEventListener('click', () => { hideOverlays(); startMatch('2p'); });
   $('btnSet').addEventListener('click', showSettings);
+  $('btnArsenal').addEventListener('click', openArsenal);
+  $('btnArsenal2').addEventListener('click', () => {
+    UI.settingsOv.classList.remove('show');
+    openArsenal();
+  });
+  $('btnCloseArsenal').addEventListener('click', closeArsenal);
   $('btnCloseSet').addEventListener('click', () => {
     UI.settingsOv.classList.remove('show');
     if (!G.matchOn) UI.titleOv.classList.add('show');

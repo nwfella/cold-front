@@ -254,7 +254,9 @@ function updateGame(dt) {
   } else if (G.mode === 'resolve') {
     settleUnits(dt);
     G.timers.resolve -= dt;
-    if (G.kill) focusOn(G.kill.x, G.kill.y, 1.14); else camTo(0, 0, 1);
+    // Keep the frame locked while a battery goes up. Zooming toward a kill at the
+    // map edge cropped the unit out of shot and the camera never came back.
+    camTo(0, 0, 1);
     if (G.timers.resolve <= 0) resolveTurn();
   } else if (G.mode === 'aim') {
     settleUnits(dt);

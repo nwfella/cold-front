@@ -179,7 +179,7 @@ function secondary(s, k) {
   });
   spawnDebris(s.x, s.y, 6, '#4a4a52');
   carve(s.x, s.y, s.r * 0.55);
-  addShake(6);
+  addShake(4);
   Audio2.boom(false, 24);
 }
 

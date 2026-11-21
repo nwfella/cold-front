@@ -211,16 +211,8 @@ function updateCamera(dt) {
 }
 function addShake(amount) {
   const m = settings.shake === 0 ? 0 : settings.shake === 2 ? 1.8 : 1;
-  G.cam.shake = Math.min(46, G.cam.shake + amount * m);
+  G.cam.shake = Math.min(28, G.cam.shake + amount * m);
 }
-function focusOn(wx, wy, z) {
-  const visW = VIEW.cw / (VIEW.scale * z);
-  const visH = VIEW.ch / (VIEW.scale * z);
-  const slackX = Math.max(0, (W - visW) / 2);
-  const slackY = Math.max(0, H - visH);
-  camTo(clamp(wx - W / 2, -slackX, slackX), clamp((wy - H) * 0.5, -slackY, 0), z);
-}
-
 function followProjectile() {
   const p = G.proj;
   if (!p) return;

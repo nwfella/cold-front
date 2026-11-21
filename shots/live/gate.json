@@ -1,6 +1,6 @@
 {
-  "pass": 47,
-  "total": 47,
+  "pass": 53,
+  "total": 53,
   "results": [
     {
       "name": "no external <script>/<link> resources",
@@ -25,12 +25,12 @@
     {
       "name": "render: canvas painted (non-blank)",
       "ok": true,
-      "detail": "{\"w\":1418,\"h\":802,\"mean\":28.2,\"unique\":62,\"brightPct\":0}"
+      "detail": "{\"w\":1418,\"h\":802,\"mean\":27.9,\"unique\":59,\"brightPct\":0}"
     },
     {
       "name": "render: sky gradient present",
       "ok": true,
-      "detail": "62 colour buckets"
+      "detail": "59 colour buckets"
     },
     {
       "name": "determinism: same seed -> same terrain",
@@ -133,9 +133,39 @@
       "detail": "[0,0,0,0,0,0]"
     },
     {
+      "name": "death: charge-up precedes the burst",
+      "ok": true,
+      "detail": "{\"c\":\"charge\",\"b\":true}"
+    },
+    {
+      "name": "death: burst throws particles and shockwaves",
+      "ok": true,
+      "detail": "219 particles, 5 rings"
+    },
+    {
+      "name": "death: turret shard is thrown clear",
+      "ok": true,
+      "detail": "moved true"
+    },
+    {
+      "name": "death: victim is down",
+      "ok": true,
+      "detail": "alive false"
+    },
+    {
+      "name": "death: every detonation is procedurally unique",
+      "ok": true,
+      "detail": "7/7 distinct — OVERLOAD:4:6:30:75 | VOID:2:3:25:87 | OVERLOAD:3:2:34:94"
+    },
+    {
       "name": "round: killing blow ends the round",
       "ok": true,
-      "detail": "{\"wins\":[1,0],\"mode\":\"roundover\",\"alive\":[true,false]}"
+      "detail": "{\"wins\":[1,0],\"mode\":\"roundover\",\"alive\":[true,false],\"killActive\":true,\"killStyle\":\"PLASMA\"}"
+    },
+    {
+      "name": "death: real kill paths trigger the detonation sequence",
+      "ok": true,
+      "detail": "style PLASMA"
     },
     {
       "name": "round: ammo + hp reset for a new round",
@@ -225,7 +255,7 @@
     {
       "name": "soak: match kept progressing",
       "ok": true,
-      "detail": "ticks 10139"
+      "detail": "ticks 10321"
     },
     {
       "name": "no uncaught exceptions",

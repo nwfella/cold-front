@@ -101,6 +101,7 @@ window.ART = {
   version: '1.0',
   get state() { return G; },
   get projs() { return G.projs; },
+  get cam() { return { x: G.cam.x, y: G.cam.y, z: G.cam.z, shake: G.cam.shake }; },
   get particles() { return particles; },
   start(mode, seed) {
     if (seed !== undefined) G.forceSeed = seed;
