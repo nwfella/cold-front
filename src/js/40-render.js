@@ -592,7 +592,8 @@ function render() {
   drawTerrain(ctx);
   drawDots(ctx);
   drawGhost(ctx);
-  for (const p of G.players) if (p) drawTank(ctx, p);
+  for (const p of G.players) if (p && tankVisible(p)) drawTank(ctx, p);
+  drawKill(ctx);
   drawStorm(ctx);
   drawAim(ctx);
   drawProjectiles(ctx);

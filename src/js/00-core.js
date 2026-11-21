@@ -162,13 +162,13 @@ const G = {
   projs: [],               // live projectiles
   mtn: [], stars: [], clouds: [],
   meteor: null,
+  kill: null,
   roundSeed: 0,
   forceSeed: null,
   matchMode: 'ai',
   aiErr: 1,
   aiTimer: 0,
   paused: false,
-  particles: [],
   rings: [],
   texts: [],
   dots: [],                // past impact markers

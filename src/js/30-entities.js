@@ -105,14 +105,7 @@ function damageUnit(target, amount, cause, source, floor) {
   Audio2.hit();
   if (target.hp <= 0) {
     target.alive = false;
-    Audio2.boom(true, 70);
-    addRing(target.x, target.y - 14, 8, 190, 0.7, '#fff3c4', 6);
-    px(target.x, target.y - 16, 46, { speed: 520, spread: 3.14, life: 1.1, size: 3.4, colors: ['#ffd27a', '#ff8a5c', '#fff'], grav: 420, drag: 0.965 });
-    spawnDebris(target.x, target.y - 10, 26, '#4a4a52');
-    particles.push({ x: target.x, y: target.y - 18, vx: 0, vy: -40, life: 2.2, max: 2.2, size: 22, color: 'rgba(40,40,48,1)', kind: 'smoke', grav: -14, drag: 0.98, rot: 0, vr: 1, grow: 34 });
-    addShake(22);
-    G.cam.flash = 0.85;
-    carve(target.x, surfaceAt(target.x) - 6, 74);
+    detonate(target);
   }
   return dmg;
 }

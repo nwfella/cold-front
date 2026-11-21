@@ -318,6 +318,54 @@ async function waitFor(fn, ms, label) {
     check('AI: never damages itself with its own shell', aiAim.every((r) => r.selfDmg <= 0),
       JSON.stringify(aiAim.map((r) => r.selfDmg)));
 
+    // ---- procedural kill sequence
+    const death = await evalIn(`(() => {
+      ART.start('ai', 991); ART.setTurn(0);
+      const before = ART.particles.length;
+      const started = ART.detonate(1);
+      const chargePhase = ART.state.kill.phase;
+      let maxParts = 0, maxRings = 0, sawBurst = false;
+      for (let i = 0; i < 150; i++) {
+        ART.tick(1);
+        maxParts = Math.max(maxParts, ART.particles.length);
+        maxRings = Math.max(maxRings, ART.state.rings.length);
+        if (ART.state.kill && ART.state.kill.phase === 'burst') sawBurst = true;
+      }
+      const k = ART.state.kill;
+      return { started, chargePhase, before, maxParts, maxRings, sawBurst,
+               turretMoved: k ? Math.abs(k.turret.x - k.x) > 12 : true,
+               victimAlive: ART.state.players[1].alive };
+    })()`);
+    check('death: charge-up precedes the burst', death.chargePhase === 'charge' && death.sawBurst, JSON.stringify({ c: death.chargePhase, b: death.sawBurst }));
+    check('death: burst throws particles and shockwaves', death.maxParts > death.before + 60 && death.maxRings >= 3, death.maxParts + ' particles, ' + death.maxRings + ' rings');
+    check('death: turret shard is thrown clear', death.turretMoved === true, 'moved ' + death.turretMoved);
+    check('death: victim is down', death.victimAlive === false, 'alive ' + death.victimAlive);
+
+    // ---- capture the burst for visual review
+    await evalIn(`(() => {
+      ART.start('ai', 5150); ART.setTurn(0);
+      ART.detonate(1);
+      for (let i = 0; i < 32; i++) ART.tick(1);
+      ART.render();
+    })()`);
+    await new Promise((r) => setTimeout(r, 240));
+    const shotKill = await send('Page.captureScreenshot', { format: 'png' });
+    fs.writeFileSync(path.join(SHOTS, 'desktop-kill.png'), Buffer.from(shotKill.data, 'base64'));
+
+    // ---- no two deaths look alike
+    const variety = await evalIn(`(() => {
+      const sig = [];
+      for (let i = 0; i < 7; i++) {
+        ART.start('ai', 100 + i); ART.setTurn(0);
+        ART.detonate(1);
+        const k = ART.state.kill;
+        sig.push([k.style.id, k.ringN, k.seq.length, Math.round(k.charge * 100), Math.round(k.crater)].join(':'));
+      }
+      return { sig, unique: new Set(sig).size };
+    })()`);
+    check('death: every detonation is procedurally unique', variety.unique >= 6,
+      variety.unique + '/7 distinct — ' + variety.sig.slice(0, 3).join(' | '));
+
     // ---- round ends and wins accrue
     const roundEnd = await evalIn(`(() => {
       ART.start('ai', 6060); ART.setTurn(0); ART.setWind(0);
@@ -326,9 +374,13 @@ async function waitFor(fn, ms, label) {
       while (ART.state.mode === 'aim' && guard++ < 4) {
         const s = ART.solve(); ART.aim(s.angle, s.power); ART.fire(); ART.settle(5000); ART.tick(120);
       }
-      return { wins: ART.state.players.map(p => p.wins), mode: ART.state.mode, alive: ART.state.players.map(p => p.alive) };
+      return { wins: ART.state.players.map(p => p.wins), mode: ART.state.mode,
+               alive: ART.state.players.map(p => p.alive), killActive: !!ART.state.kill,
+               killStyle: ART.state.kill ? ART.state.kill.style.id : null };
     })()`);
     check('round: killing blow ends the round', roundEnd.wins[0] === 1, JSON.stringify(roundEnd));
+    check('death: real kill paths trigger the detonation sequence', roundEnd.killActive === true,
+      'style ' + roundEnd.killStyle);
 
     // ---- reload restores ammo and hp
     const reload = await evalIn(`(() => {
@@ -491,7 +543,7 @@ async function waitFor(fn, ms, label) {
         if (ART.state.mode === 'aim' && ART.state.turn === 1 && !ART.state.aiPlan && ART.state.aiTimer <= 0) ART.tick(1);
       }
       return { ticks: ART.tickCount, rounds, restarts, errs, mode: ART.state.mode,
-               hp: ART.state.players.map(p => Math.round(p.hp)), parts: ART.state.particles.length };
+               hp: ART.state.players.map(p => Math.round(p.hp)), parts: ART.particles.length };
     })()`);
     check('soak: 6000 ticks without a page error', soak.errs.length === 0, JSON.stringify(soak.errs.slice(0, 3)));
     check('soak: match kept progressing', soak.restarts >= 0 && soak.ticks > 6000, 'ticks ' + soak.ticks);

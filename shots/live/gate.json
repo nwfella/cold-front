@@ -1,6 +1,6 @@
 {
-  "pass": 44,
-  "total": 44,
+  "pass": 47,
+  "total": 47,
   "results": [
     {
       "name": "no external <script>/<link> resources",
@@ -25,12 +25,12 @@
     {
       "name": "render: canvas painted (non-blank)",
       "ok": true,
-      "detail": "{\"w\":1418,\"h\":802,\"mean\":27.3,\"unique\":69,\"brightPct\":0}"
+      "detail": "{\"w\":1418,\"h\":802,\"mean\":28.2,\"unique\":62,\"brightPct\":0}"
     },
     {
       "name": "render: sky gradient present",
       "ok": true,
-      "detail": "69 colour buckets"
+      "detail": "62 colour buckets"
     },
     {
       "name": "determinism: same seed -> same terrain",
@@ -148,6 +148,21 @@
       "detail": "{\"carved\":true,\"cleared\":true,\"hp0\":[100,100]}"
     },
     {
+      "name": "storm: cannot drop a player below the floor",
+      "ok": true,
+      "detail": "{\"from30\":{\"hp\":25,\"alive\":true},\"from26\":{\"hp\":25,\"alive\":true},\"from100\":{\"hp\":68,\"alive\":true}}"
+    },
+    {
+      "name": "storm: never finishes a player",
+      "ok": true,
+      "detail": "alive true/true"
+    },
+    {
+      "name": "storm: still hurts a healthy player",
+      "ok": true,
+      "detail": "hp 68"
+    },
+    {
       "name": "turn clock: expires into an auto-shot",
       "ok": true,
       "detail": "{\"fired\":1,\"mode\":\"fly\"}"
@@ -210,7 +225,7 @@
     {
       "name": "soak: match kept progressing",
       "ok": true,
-      "detail": "ticks 9869"
+      "detail": "ticks 10139"
     },
     {
       "name": "no uncaught exceptions",

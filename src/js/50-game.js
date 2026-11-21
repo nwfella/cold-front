@@ -41,6 +41,8 @@ function newRound(first) {
   G.rings.length = 0;
   G.texts.length = 0;
   G.aiErr = 1;
+  G.kill = null;
+  G.stormGrace = 0;
   G.aiPlan = null;
   G.aiTimer = 0;
   G.cam.flash = 0;
@@ -224,11 +226,11 @@ function endRound(wIdx) {
   if (p.wins >= 2) {
     G.winner = wIdx;
     G.mode = 'matchover';
-    setTimeout(() => showEnd(wIdx), 900);
+    setTimeout(() => showEnd(wIdx), 2900);
     if (G.matchMode !== 'ai' || wIdx === 0) Audio2.win(); else Audio2.lose();
   } else {
     if (G.matchMode !== 'ai' || wIdx === 0) Audio2.win(); else Audio2.lose();
-    setTimeout(() => showRoundOver(wIdx), 800);
+    setTimeout(() => showRoundOver(wIdx), 2700);
   }
 }
 
@@ -252,7 +254,7 @@ function updateGame(dt) {
   } else if (G.mode === 'resolve') {
     settleUnits(dt);
     G.timers.resolve -= dt;
-    camTo(0, 0, 1);
+    if (G.kill) focusOn(G.kill.x, G.kill.y, 1.14); else camTo(0, 0, 1);
     if (G.timers.resolve <= 0) resolveTurn();
   } else if (G.mode === 'aim') {
     settleUnits(dt);
@@ -290,6 +292,7 @@ function updateGame(dt) {
 
   if (G.stormGrace > 0) G.stormGrace = Math.max(0, G.stormGrace - dt);
 
+  updateKill(dt);
   updateParticles(dt);
   // trail ghosts for the active player fill from the live projectile
   if (G.mode === 'fly') {

@@ -134,6 +134,13 @@ window.ART = {
   setHp(i, v) { G.players[i].hp = v; updateHud(); return G.players[i].hp; },
   setTurn(i) { G.turn = i; G.mode = 'aim'; updateHud(); return G.turn; },
   meteorAt(x) { G.meteor = { x: x === undefined ? 800 : x, t: 0.15 }; return G.meteor; },
+  detonate(i) {
+    const p = G.players[i || 0];
+    if (!p) return null;
+    p.hp = 0; p.alive = false;
+    detonate(p);
+    return G.kill ? { style: G.kill.style.id, charge: +G.kill.charge.toFixed(2), rings: G.kill.ringN, seq: G.kill.seq.length } : null;
+  },
   screenOf(x, y) {
     const s = worldToScreen(x, y);
     const r = UI.canvas.getBoundingClientRect();

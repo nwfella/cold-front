@@ -30,6 +30,10 @@ Most browser artillery games are Gorillas with a fresh coat of paint. This one t
 |---|---|
 | ![impact](shots/desktop-impact.png) | ![title](shots/title.png) |
 
+| A battery going up |
+|---|
+| ![kill](shots/desktop-kill.png) |
+
 ---
 
 ## How to play
@@ -84,6 +88,16 @@ Three details that matter more than they look:
 3. **Flat rounds are scored on vertical error**, because a projectile with no gravity reaches the target's *x* from any angle — "range error" is trivially zero and the AI would fire it into orbit.
 
 Difficulty jitters the solved answer (±4.6° Elite → Recruit) and multiplies the error down each turn so a long round gets harder.
+
+### Death
+
+Losing a battery is the best moment in the game, so it is not a sprite swap. `detonate()` picks one of five styles (**THERMITE, PLASMA, VOID, EMP, OVERLOAD**) plus a fresh set of parameters every time — charge-up length (0.22–0.42 s), 2–4 shockwave rings, 2–6 secondary detonations, crater radius, shard launch impulse, and fireball blob count. The hull flashes and implodes, then the turret tears loose as a physically simulated chunk that bounces off the terrain, the ground wave rips outward along the surface, and embers breathe out of the wreck for four seconds.
+
+Seven consecutive kills produce seven distinct signatures:
+
+```
+OVERLOAD:4:6:30:75 | VOID:2:3:25:87 | OVERLOAD:3:2:34:94 | ...
+```
 
 ### Feel
 

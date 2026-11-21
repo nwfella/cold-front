@@ -102,6 +102,19 @@ const Audio2 = (() => {
     tick() { tone(880, 620, 0.06, 0.07, 'square'); },
     turn() { tone(520, 760, 0.12, 0.1, 'sine'); setTimeout(() => tone(780, 1040, 0.14, 0.08, 'sine'), 90); },
     hit() { tone(300, 120, 0.2, 0.18, 'sawtooth'); noise(0.16, 0.2, 'bandpass', 1400, 1.2, 0.4); },
+    charge(dur, pitch) {
+      tone(70 * (pitch || 1), 540 * (pitch || 1), dur, 0.1, 'sawtooth');
+      noise(dur, 0.09, 'bandpass', 420, 1.6, 0.5);
+    },
+    kill(pitch) {
+      const r = pitch || 1;
+      noise(1.1, 0.5, 'lowpass', 1500 * r, 0.7, 0.03);
+      noise(1.7, 0.24, 'lowpass', 270, 0.6, 0.02);
+      tone(170 * r, 22, 0.95, 0.5, 'sine');
+      tone(330 * r, 40, 0.6, 0.2, 'triangle');
+      setTimeout(() => { tone(900 * r, 220, 0.7, 0.1, 'sine'); noise(0.5, 0.14, 'bandpass', 2600, 1.4, 0.2); }, 90);
+      setTimeout(() => { noise(0.9, 0.17, 'lowpass', 720, 0.7, 0.05); tone(120, 46, 0.5, 0.16, 'sine'); }, 430);
+    },
     win() { [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => tone(f, f * 1.01, 0.28, 0.13, 'sine'), i * 110)); },
     lose() { [392, 330, 262].forEach((f, i) => setTimeout(() => tone(f, f * 0.98, 0.36, 0.14, 'triangle'), i * 150)); },
     wind(amount) {
