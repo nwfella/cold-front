@@ -19,7 +19,8 @@ const WEAPON_ICONS = {
   cluster: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="7.5" r="2.4"/><circle cx="6.6" cy="16.5" r="2.4"/><circle cx="17.4" cy="16.5" r="2.4"/><path d="M12 2.6v2.5" stroke-linecap="round"/></svg>',
   siege: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="7.2"/><circle cx="12" cy="12" r="2.4"/></svg>',
   rail: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18.5L20 6"/><path d="M15.6 6H20v4.4"/></svg>',
-  roller: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="16.4" cy="16" r="3.1"/><path d="M3 8.5c3.4-4.6 8.2 2.6 10.4 6.2" stroke-linecap="round"/></svg>'
+  roller: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="16.4" cy="16" r="3.1"/><path d="M3 8.5c3.4-4.6 8.2 2.6 10.4 6.2" stroke-linecap="round"/></svg>',
+  pen: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8.5h19"/><path d="M12 2.5v14"/><path d="M8.4 12.6L12 16.4l3.6-3.8"/></svg>'
 };
 
 function weaponLine(i) {
@@ -245,7 +246,7 @@ function bindInput() {
       case 'ArrowRight': p.power = clamp(p.power + step, 10, 100); break;
       case 'ArrowLeft': p.power = clamp(p.power - step, 10, 100); break;
       case ' ': case 'Enter': fireFromUI(); e.preventDefault(); return;
-      case '1': case '2': case '3': case '4': case '5': selectWeapon(+e.key - 1); break;
+      case '1': case '2': case '3': case '4': case '5': case '6': selectWeapon(+e.key - 1); break;
       default: return;
     }
     e.preventDefault();

@@ -341,6 +341,70 @@ async function waitFor(fn, ms, label) {
     check('death: turret shard is thrown clear', death.turretMoved === true, 'moved ' + death.turretMoved);
     check('death: victim is down', death.victimAlive === false, 'alive ' + death.victimAlive);
 
+    // ---- PENETRATOR: bores through terrain, and duds out in thick rock
+    const pen = await evalIn(`(() => {
+      const runs = {};
+      // 1) natural ridge: bores, then breaks out the far side
+      ART.start('ai', 4242); ART.setTurn(0); ART.setWind(0);
+      ART.weapon(5);
+      const beforeT = ART.terrainHash();
+      ART.aim(52, 62); ART.fire();
+      let maxT = 0, sawBore = false;
+      for (let i = 0; i < 900 && ART.state.mode === 'fly'; i++) {
+        ART.tick(1);
+        maxT = Math.max(maxT, ART.state.tunnels.length);
+        const p = ART.state.projs[0];
+        if (p && p.burrowing) sawBore = true;
+      }
+      ART.tick(60);
+      runs.through = { sawBore, maxT, brokeOut: ART.state.log.some((l) => l.txt.indexOf('BREAK THROUGH') >= 0),
+                       carved: ART.terrainHash() !== beforeT, ammo: ART.state.players[0].ammo[5],
+                       mode: ART.state.mode };
+
+      // 2) thick mesa: budget runs out, dud, enemy untouched
+      ART.start('ai', 4242); ART.setTurn(0); ART.setWind(0);
+      ART.weapon(5);
+      for (let x = 400; x <= 1400; x++) ART.state.terrain[x] = 430;
+      const foeHp = ART.state.players[1].hp;
+      ART.aim(45, 27); ART.fire();
+      let dudT = 0, ended = null;
+      for (let i = 0; i < 1200 && ART.state.mode === 'fly'; i++) {
+        ART.tick(1);
+        dudT = Math.max(dudT, ART.state.tunnels.length);
+        const p = ART.state.projs[0];
+        if (p && p.burrowing) ended = Math.round(p.burrowLeft);
+      }
+      ART.tick(60);
+      runs.dud = { tunnels: dudT, endedAt: ended, dud: ART.state.log.some((l) => l.txt.indexOf('DUD') >= 0),
+                   foeHp: Math.round(ART.state.players[1].hp), before: foeHp };
+      return runs;
+    })()`);
+    check('penetrator: bores through the ridge instead of exploding on it',
+      pen.through.sawBore && pen.through.maxT > 8 && pen.through.carved,
+      JSON.stringify(pen.through));
+    check('penetrator: breaks out the far side', pen.through.brokeOut === true, 'log ' + pen.through.brokeOut);
+    check('penetrator: costs its only round', pen.through.ammo === 0, 'ammo ' + pen.through.ammo);
+    check('penetrator: thick rock duds it out unharmed',
+      pen.dud.dud === true && pen.dud.endedAt === 0 && pen.dud.foeHp === pen.dud.before,
+      JSON.stringify(pen.dud));
+
+    // ---- capture a bore in progress
+    await evalIn(`(() => {
+      ART.start('ai', 4242); ART.setTurn(0); ART.setWind(0);
+      ART.weapon(5);
+      for (let x = 400; x <= 1000; x++) ART.state.terrain[x] = 430;
+      ART.aim(45, 27); ART.fire();
+      for (let i = 0; i < 200; i++) {
+        ART.tick(1);
+        const p = ART.state.projs[0];
+        if (p && p.burrowing && p.burrowLeft < 120) break;
+      }
+      ART.render();
+    })()`);
+    await new Promise((r) => setTimeout(r, 200));
+    const shotPen = await send('Page.captureScreenshot', { format: 'png' });
+    fs.writeFileSync(path.join(SHOTS, 'pen-burrow.png'), Buffer.from(shotPen.data, 'base64'));
+
     // ---- HUD: bigger wind readout
     const windHud = await evalIn(`(() => {
       const el = document.getElementById('windTxt');
@@ -361,7 +425,7 @@ async function waitFor(fn, ms, label) {
       };
     })()`);
     check('hud: each weapon chip shows an icon, name and ammo',
-      chips.n === 5 && chips.icons === 5 && chips.names.every((n) => n.length > 0),
+      chips.n === 6 && chips.icons === 6 && chips.names.every((n) => n.length > 0),
       chips.names.join('/') + ' — ' + chips.counts.join('/'));
     check('hud: selected weapon has a plain-language line', chips.desc.length > 12, chips.desc.slice(0, 58));
 
@@ -402,9 +466,9 @@ async function waitFor(fn, ms, label) {
       return { count: cvs.length, nonBlank, moving,
                names: [...document.querySelectorAll('.arsName')].map((n) => n.textContent) };
     })()`);
-    check('arsenal: one preview per weapon', arsenal.count === 5 && arsenal.names.length === 5, arsenal.names.join('/'));
-    check('arsenal: every preview renders', arsenal.nonBlank === 5, arsenal.nonBlank + '/5 painted');
-    check('arsenal: previews animate', arsenal.moving >= 3, arsenal.moving + '/5 moving');
+    check('arsenal: one preview per weapon', arsenal.count === 6 && arsenal.names.length === 6, arsenal.names.join('/'));
+    check('arsenal: every preview renders', arsenal.nonBlank === 6, arsenal.nonBlank + '/6 painted');
+    check('arsenal: previews animate', arsenal.moving >= 4, arsenal.moving + '/6 moving');
 
     // ---- capture the burst for visual review
     await evalIn(`(() => {

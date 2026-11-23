@@ -151,13 +151,13 @@ kbd{font-family:var(--mono);font-size:10px;background:rgba(255,255,255,.07);bord
 .sw.on::after{left:21px}
 /* arsenal */
 #arsenalList{display:flex;flex-direction:column;margin-top:12px}
-.ars{display:grid;grid-template-columns:180px 1fr;gap:15px;align-items:center;padding:11px 0;border-bottom:1px solid var(--line-soft)}
+.ars{display:grid;grid-template-columns:164px 1fr;gap:14px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line-soft)}
 .ars:last-child{border-bottom:0}
-.arsCv{width:180px;height:84px;display:block;border-radius:10px;background:#06090e;border:1px solid var(--line-soft)}
+.arsCv{width:164px;height:76px;display:block;border-radius:9px;background:#06090e;border:1px solid var(--line-soft)}
 .arsHead{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
-.arsName{font-size:13px;font-weight:800;letter-spacing:.08em}
+.arsName{font-size:12.5px;font-weight:800;letter-spacing:.08em}
 .arsAmmo{font-family:var(--mono);font-size:9px;letter-spacing:.1em;color:var(--ink-faint);text-transform:uppercase}
-.arsDesc{font-size:11.5px;color:var(--ink-dim);line-height:1.5;margin:4px 0 7px}
+.arsDesc{font-size:11px;color:var(--ink-dim);line-height:1.45;margin:3px 0 5px;max-width:60ch}
 .arsStats{display:flex;gap:15px;flex-wrap:wrap;font-family:var(--mono);font-size:9px;letter-spacing:.1em;color:var(--ink-faint);text-transform:uppercase}
 .arsStats b{color:var(--ink);font-weight:700}
 /* result */
@@ -279,8 +279,8 @@ kbd{font-family:var(--mono);font-size:10px;background:rgba(255,255,255,.07);bord
   <div class="ov" id="arsenalOv">
     <div class="sheet wide">
       <div class="kicker">Field manual</div>
-      <h1 style="font-size:34px">The Arsenal</h1>
-      <p class="tag" style="margin:8px 0 0">Five rounds, five jobs. Every preview below runs the game's own ballistics at small scale — same gravity, same wind model, same split and roll behaviour.</p>
+      <h1 style="font-size:29px;margin-top:2px">The Arsenal</h1>
+      <p class="tag" style="margin:6px 0 0">Six rounds, six jobs. Every preview below runs the game's own ballistics at small scale — same gravity, same wind model, same split, roll and bore behaviour.</p>
       <div id="arsenalList"></div>
       <div class="btns" style="margin-top:16px"><button class="btn primary" id="btnCloseArsenal">Back</button></div>
     </div>
@@ -453,6 +453,11 @@ const WEAPONS = [
     id: 'roller', name: 'ROLLER', short: 'ROL', keys: '5',
     ammo: 2, r: 86, dmg: 50, spd: 0.96, color: '#e0a6ff', roll: true,
     desc: 'Bounces off terrain and rolls into the target.'
+  },
+  {
+    id: 'pen', name: 'PENETRATOR', short: 'PEN', keys: '6',
+    ammo: 1, r: 96, dmg: 58, spd: 0.9, color: '#c9d8ea', burrow: true, tunnel: 420,
+    desc: 'Drills through the ridge and breaks out on the far side.'
   }
 ];
 
@@ -491,6 +496,7 @@ const G = {
   mtn: [], stars: [], clouds: [],
   meteor: null,
   kill: null,
+  tunnels: [],
   roundSeed: 0,
   forceSeed: null,
   matchMode: 'ai',
@@ -673,6 +679,10 @@ const Audio2 = (() => {
       tone(78, 18, 0.8 * s, 0.22 * s, 'triangle');
     },
     crumble() { noise(0.7, 0.17, 'lowpass', 520, 0.7, 0.25); },
+    burrow() {
+      noise(0.6, 0.16, 'lowpass', 340, 0.8, 0.35);
+      tone(110, 62, 0.5, 0.12, 'sawtooth');
+    },
     roll() { noise(0.22, 0.1, 'bandpass', 340, 2.5, 0.5); },
     tick() { tone(880, 620, 0.06, 0.07, 'square'); },
     turn() { tone(520, 760, 0.12, 0.1, 'sine'); setTimeout(() => tone(780, 1040, 0.14, 0.08, 'sine'), 90); },
@@ -765,6 +775,7 @@ function genTerrain(seed) {
     sm[x] = (a + 2 * b + c) / 4;
   }
   G.terrain = sm;
+  G.tunnels = [];
   G.scorch = new Float32Array(W + 1);
   G.crater = [];
   G.dots = [];
@@ -866,6 +877,33 @@ function carve(cx, cy, r) {
   G.crater.push({ x: cx, y: cy, r });
   if (G.crater.length > 26) G.crater.shift();
   return any;
+}
+
+/* Record a bore segment. Rock directly above the tunnel is too thin to hold, so
+   the surface caves into the bore - the ridge gets sawn down where it was cut. */
+function pushTunnel(x, y, r) {
+  const last = G.tunnels[G.tunnels.length - 1];
+  if (last && Math.hypot(x - last.x, y - last.y) < 12) return;
+  G.tunnels.push({ x, y, r: r || 15 });
+  if (G.tunnels.length > 260) G.tunnels.shift();
+}
+
+/* Cave in a thin roof. Called for a point BEHIND the bore head only - collapsing
+   at the head drops the surface under the shell, which then reads as broken out. */
+function collapseRoofAt(x, y, r) {
+  const i0 = Math.max(1, Math.floor(x - r * 1.2));
+  const i1 = Math.min(W - 1, Math.ceil(x + r * 1.2));
+  let caved = false;
+  for (let i = i0; i <= i1; i++) {
+    const roofTop = y - r;
+    const surf = G.terrain[i];
+    if (roofTop > surf && roofTop - surf < 26) {
+      G.terrain[i] = Math.min(H, y + r * 0.8);
+      G.scorch[i] = Math.max(G.scorch[i], 0.45);
+      caved = true;
+    }
+  }
+  if (caved && rnd() < 0.35) spawnDebris(x, surfaceAt(x), 2, '#6b5a4a');
 }
 
 /* units follow the ground; falling causes damage */
@@ -1055,7 +1093,7 @@ function makeProjectile(team, x, y, vx, vy, w, extra) {
     x, y, vx, vy, team, w,
     r: w.r, dmg: w.dmg, color: w.color,
     age: 0, dist: 0, trail: [], smoke: 0,
-    split: !!w.split, flat: !!w.flat, roll: !!w.roll,
+    split: !!w.split, flat: !!w.flat, roll: !!w.roll, burrow: !!w.burrow,
     rolling: false, rollDist: 0, spin: rr(0, 6.28),
     dead: false
   };
@@ -1106,6 +1144,7 @@ function stepProjectiles(dt) {
     const p = list[i];
     p.age += dt;
     if (p.rolling) { stepRolling(p, dt, i); continue; }
+    if (p.burrowing) { if (!stepBurrow(p, dt)) list.splice(i, 1); continue; }
 
     const spd = Math.hypot(p.vx, p.vy);
     const steps = Math.max(1, Math.min(24, Math.ceil((spd * dt) / 7)));
@@ -1133,6 +1172,7 @@ function stepProjectiles(dt) {
       // --- terrain hit
       if (ny >= surfaceAt(nx)) {
         const gy = surfaceAt(nx);
+        if (p.burrow && !p.flat && !p.brokeOut) { enterBurrow(p, nx, gy); break; }
         if (p.roll && !p.flat) {
           p.rolling = true;
           p.y = gy - 5;
@@ -1202,6 +1242,83 @@ function stepProjectiles(dt) {
     G.mode = 'resolve';
     G.timers.resolve = 1.15;
   }
+}
+
+/* ---------------------------------------------------------------- burrow */
+function enterBurrow(p, x, gy) {
+  p.burrowing = true;
+  p.x = x;
+  p.y = gy + 10;
+  p.burySlope = clamp(p.vy / Math.max(60, Math.abs(p.vx)), -0.4, 0.4);
+  p.vy = 0;
+  p.burrowLeft = p.w.tunnel || 420;
+  p.trail.length = 0;
+  addShake(6);
+  if (Audio2.burrow) Audio2.burrow();
+  spawnDebris(x, gy, 14, '#5a4a3c');
+  addRing(x, gy, 3, 60, 0.35, 'rgba(205,224,255,.8)', 2.5);
+  pushTunnel(x, p.y, 15);
+}
+
+function stepBurrow(p, dt) {
+  const dir = p.vx >= 0 ? 1 : -1;
+  const speed = Math.max(150, Math.abs(p.vx));
+  const step = speed * dt;
+  p.x += dir * step;
+  p.y += p.burySlope * step;
+  p.burrowLeft -= step;
+  p.dist += step;
+  pushTunnel(p.x, p.y, 15);
+  const trailBack = G.tunnels[G.tunnels.length - 7];
+  if (trailBack) collapseRoofAt(trailBack.x, trailBack.y, 15);
+
+  if (rnd() < 0.45) {
+    const g = surfaceAt(p.x);
+    spawnParticle({
+      x: p.x + rr(-9, 9), y: g - 2, vx: rr(-24, 24), vy: rr(-70, -22),
+      life: rr(0.3, 0.65), max: 0.65, size: rr(3, 8),
+      color: 'rgba(130,118,105,.55)', kind: 'smoke', grav: -10, drag: 0.96,
+      rot: 0, vr: 0, grow: 9
+    });
+  }
+  if (rnd() < 0.3) addShake(1.4);
+
+  for (const t of G.players) {
+    if (!t.alive) continue;
+    if (Math.abs(p.x - t.x) < 34 && p.y > t.y - 34 && p.y < t.y + 22) {
+      explode(p.x, p.y, p, t);
+      return false;
+    }
+  }
+
+  const g = surfaceAt(p.x);
+  if (p.y < g - 3) {                    // broke out into open air
+    p.burrowing = false;
+    p.brokeOut = true;                  // one bore per round
+    p.vy = p.burySlope * speed * 0.5;
+    addRing(p.x, p.y, 4, 84, 0.4, 'rgba(205,224,255,.85)', 3);
+    spawnDebris(p.x, g, 15, '#5a4a3c');
+    Audio2.boom(false, 16);
+    pushLog(tagOf(G.players[p.team]) + ' \u25B8 BREAK THROUGH', 'hit');
+    return true;
+  }
+  if (p.burrowLeft <= 0) { explodeUnder(p.x, p.y, p); return false; }
+  if (p.x < -80 || p.x > W + 80 || p.y > H + 40) return false;
+  return true;
+}
+
+/* ran out of rock: muffled thump, collapses the hill, spares the tanks */
+function explodeUnder(x, y, p) {
+  const gy = surfaceAt(x);
+  carve(x, gy - 4, p.r * 0.8);
+  for (let i = 0; i < 3; i++) addRing(x, y, 6, 90 + i * 45, 0.5 + i * 0.1, 'rgba(180,200,230,.55)', 2);
+  addShake(16);
+  G.cam.flash = Math.max(G.cam.flash, 0.42);
+  Audio2.boom(true, 30);
+  spawnDebris(x, gy, 20, '#5a4a3c');
+  px(x, gy - 6, 18, { speed: 250, spread: 2.2, angle: -1.57, life: 0.9, size: 3, colors: ['#cfd8e6', '#8a94a6'], grav: 320, drag: 0.96 });
+  pushLog(tagOf(G.players[p.team]) + ' \u25B8 DUD \u2014 ROCK TOO THICK', 'miss');
+  G.dots.push({ x, y: gy, r: 46, team: p.team, t: 0 });
 }
 
 function stepRolling(p, dt, idx) {
@@ -1863,6 +1980,22 @@ function drawTerrain(ctx) {
     ctx.fillStyle = i % 3 ? 'rgba(255,255,255,.5)' : 'rgba(0,0,0,.6)';
     ctx.fillRect(x, y, 1.6, 1.6);
   }
+  // bores: lit rim, black core
+  if (G.tunnels && G.tunnels.length > 1) {
+    ctx.globalAlpha = 1;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(G.tunnels[0].x, G.tunnels[0].y);
+    for (let i = 1; i < G.tunnels.length; i++) ctx.lineTo(G.tunnels[i].x, G.tunnels[i].y);
+    ctx.strokeStyle = 'rgba(130,152,180,.20)';
+    ctx.lineWidth = 38;
+    ctx.stroke();
+    ctx.strokeStyle = '#04060a';
+    ctx.lineWidth = 29;
+    ctx.stroke();
+  }
+
   // scorch
   ctx.globalAlpha = 1;
   for (let x = 0; x <= W; x += 2) {
@@ -2410,13 +2543,14 @@ function planAI() {
   else if (me.ammo[1] > 0 && rnd() < 0.35) wi = 1;
   else if (me.ammo[4] > 0 && rnd() < 0.18) wi = 4;
   else if (me.ammo[3] > 0 && rnd() < 0.12) wi = 3;
+  else if (me.ammo[5] > 0 && rnd() < 0.2) wi = 5;
   if (me.ammo[wi] !== Infinity && me.ammo[wi] <= 0) wi = bestWeaponIndex(me);
 
   const tgt = { x: foe.x, y: foe.y - 16 };
   let sol = solveBallistic(me, tgt, G.wind, WEAPONS[wi]);
   if (wi !== 0 && (sol.blocked || sol.miss > 45)) {
-    // no viable line for this round — stop wasting it, engage with HE instead
-    wi = 0;
+    // a blocked line is exactly what the penetrator is for: bore through the ridge
+    wi = (sol.blocked && me.ammo[5] > 0 && wi !== 5) ? 5 : 0;
     sol = solveBallistic(me, tgt, G.wind, WEAPONS[wi]);
   }
   const jitterA = (rnd() - 0.5) * 2 * lvl.err * G.aiErr;
@@ -2633,7 +2767,8 @@ const WEAPON_ICONS = {
   cluster: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="7.5" r="2.4"/><circle cx="6.6" cy="16.5" r="2.4"/><circle cx="17.4" cy="16.5" r="2.4"/><path d="M12 2.6v2.5" stroke-linecap="round"/></svg>',
   siege: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="7.2"/><circle cx="12" cy="12" r="2.4"/></svg>',
   rail: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18.5L20 6"/><path d="M15.6 6H20v4.4"/></svg>',
-  roller: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="16.4" cy="16" r="3.1"/><path d="M3 8.5c3.4-4.6 8.2 2.6 10.4 6.2" stroke-linecap="round"/></svg>'
+  roller: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="16.4" cy="16" r="3.1"/><path d="M3 8.5c3.4-4.6 8.2 2.6 10.4 6.2" stroke-linecap="round"/></svg>',
+  pen: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8.5h19"/><path d="M12 2.5v14"/><path d="M8.4 12.6L12 16.4l3.6-3.8"/></svg>'
 };
 
 function weaponLine(i) {
@@ -2859,7 +2994,7 @@ function bindInput() {
       case 'ArrowRight': p.power = clamp(p.power + step, 10, 100); break;
       case 'ArrowLeft': p.power = clamp(p.power - step, 10, 100); break;
       case ' ': case 'Enter': fireFromUI(); e.preventDefault(); return;
-      case '1': case '2': case '3': case '4': case '5': selectWeapon(+e.key - 1); break;
+      case '1': case '2': case '3': case '4': case '5': case '6': selectWeapon(+e.key - 1); break;
       default: return;
     }
     e.preventDefault();
@@ -3000,11 +3135,12 @@ function checkOrientation() {
 const ARS = { open: false, raf: 0, items: [], last: 0 };
 
 const ARSENAL_COPY = {
-  he: { role: 'General purpose', line: 'Balanced high-explosive. Enough to reshape a ridge, cheap enough to fire every turn.' },
-  cluster: { role: 'Area denial', line: 'Splits into three bomblets at the apex. Punishes a tank sitting in a crater.' },
-  siege: { role: 'Siege', line: 'Slow and enormous. Carves a bowl out of the hill and anything standing on it.' },
-  rail: { role: 'Line of sight', line: 'No gravity, no wind. The bore either crosses the target or the round is wasted.' },
-  roller: { role: 'Finisher', line: 'Lands short, then rolls along the terrain into the target. Beats a ridge that blocks a lob.' }
+  he: { role: 'General purpose', line: 'Balanced high-explosive — reshapes a ridge, cheap enough to fire every turn.' },
+  cluster: { role: 'Area denial', line: 'Splits into three bomblets at the apex. Punishes a crater-camper.' },
+  siege: { role: 'Siege', line: 'Slow and enormous. Carves a bowl out of the hill and anything on it.' },
+  rail: { role: 'Line of sight', line: 'No gravity, no wind. The bore either crosses the target or it is wasted.' },
+  roller: { role: 'Finisher', line: 'Lands short, then rolls along the terrain into the target.' },
+  pen: { role: 'Bunker buster', line: 'Bores through the ridge and breaks out the far side. Thick rock stops it.' }
 };
 
 const G_THUMB = 190;      // thumbnail gravity
@@ -3050,7 +3186,7 @@ function buildArsenal() {
       w, cv, ctx: cv.getContext('2d'),
       cw: 180, ch: 84,
       t: 0, cycle: 2.6, launchAngle: 45,
-      proj: null, bomblets: [], trail: [], parts: [], rings: [], flash: 0
+      proj: null, bomblets: [], trail: [], parts: [], rings: [], flash: 0, tunnel: []
     };
     resetThumb(it);
     return it;
@@ -3119,7 +3255,7 @@ function stepThumb(it, dt) {
 
   const p = it.proj;
   if (p && !p.dead) {
-    if (!p.flat) p.vy += g * dt;
+    if (!p.flat && !p.rolling) p.vy += g * dt;
     p.x += p.vx * dt;
     p.y += p.vy * dt;
     it.trail.push({ x: p.x, y: p.y });
@@ -3136,6 +3272,15 @@ function stepThumb(it, dt) {
     }
 
     // roller: touch down then run along the ground
+    // penetrator: touch down, then bore straight through the ridge
+    if (it.w.burrow && !p.rolling && p.vy > 0 && p.y >= gy - 2) {
+      p.rolling = true;
+      p.y = gy + 6;
+      p.vy = 0;
+      p.vx = 76;
+      it.tunnel = [{ x: p.x, y: p.y }];
+    }
+
     if (it.w.roll && !p.rolling && p.vy > 0 && p.y >= gy - 2) {
       p.rolling = true;
       p.y = gy - 2;
@@ -3144,7 +3289,15 @@ function stepThumb(it, dt) {
       thumbBurst(it, p.x, gy - 2, 0.45, false);
     }
 
-    if (p.y >= gy - 2 && (!it.w.roll || p.rolling)) {
+    if (it.w.burrow && p.rolling) {
+      if (it.tunnel) it.tunnel.push({ x: p.x, y: p.y + 6 });
+      if (p.x >= THUMB_TX - 8) {
+        thumbBurst(it, p.x, gy - 3, 1.3, true);
+        p.dead = true;
+      }
+    }
+
+    if (p.y >= gy - 2 && !it.w.burrow && (!it.w.roll || p.rolling)) {
       thumbBurst(it, p.x, gy - 3, it.w.id === 'siege' ? 1.5 : 1, true);
       p.dead = true;
     }
@@ -3201,6 +3354,34 @@ function drawThumb(it) {
   c.moveTo(0, gy + 0.5);
   for (let x = 0; x <= cw; x += 6) c.lineTo(x, gy + 0.5 - Math.sin(x * 0.09) * 1.2);
   c.stroke();
+
+  // a ridge for the penetrator to bore through
+  if (it.w.burrow) {
+    c.fillStyle = '#16202c';
+    c.strokeStyle = 'rgba(255,170,120,.32)';
+    c.lineWidth = 1;
+    c.beginPath();
+    c.moveTo(74, gy + 1);
+    c.quadraticCurveTo(108, gy - 30, 146, gy + 1);
+    c.closePath();
+    c.fill();
+    c.stroke();
+  }
+
+  // the bore itself
+  if (it.tunnel && it.tunnel.length > 1) {
+    c.lineCap = 'round';
+    c.lineJoin = 'round';
+    c.beginPath();
+    c.moveTo(it.tunnel[0].x, it.tunnel[0].y);
+    for (let i = 1; i < it.tunnel.length; i++) c.lineTo(it.tunnel[i].x, it.tunnel[i].y);
+    c.strokeStyle = 'rgba(150,180,220,.22)';
+    c.lineWidth = 9;
+    c.stroke();
+    c.strokeStyle = '#05070b';
+    c.lineWidth = 6;
+    c.stroke();
+  }
 
   // launcher
   c.save();
@@ -3471,6 +3652,7 @@ window.ART = {
   setHp(i, v) { G.players[i].hp = v; updateHud(); return G.players[i].hp; },
   setTurn(i) { G.turn = i; G.mode = 'aim'; updateHud(); return G.turn; },
   meteorAt(x) { G.meteor = { x: x === undefined ? 800 : x, t: 0.15 }; return G.meteor; },
+  setTunnelBudget(u) { WEAPONS[5].tunnel = u; return WEAPONS[5].tunnel; },
   detonate(i) {
     const p = G.players[i || 0];
     if (!p) return null;

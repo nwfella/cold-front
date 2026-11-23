@@ -61,6 +61,7 @@ function genTerrain(seed) {
     sm[x] = (a + 2 * b + c) / 4;
   }
   G.terrain = sm;
+  G.tunnels = [];
   G.scorch = new Float32Array(W + 1);
   G.crater = [];
   G.dots = [];
@@ -162,6 +163,33 @@ function carve(cx, cy, r) {
   G.crater.push({ x: cx, y: cy, r });
   if (G.crater.length > 26) G.crater.shift();
   return any;
+}
+
+/* Record a bore segment. Rock directly above the tunnel is too thin to hold, so
+   the surface caves into the bore - the ridge gets sawn down where it was cut. */
+function pushTunnel(x, y, r) {
+  const last = G.tunnels[G.tunnels.length - 1];
+  if (last && Math.hypot(x - last.x, y - last.y) < 12) return;
+  G.tunnels.push({ x, y, r: r || 15 });
+  if (G.tunnels.length > 260) G.tunnels.shift();
+}
+
+/* Cave in a thin roof. Called for a point BEHIND the bore head only - collapsing
+   at the head drops the surface under the shell, which then reads as broken out. */
+function collapseRoofAt(x, y, r) {
+  const i0 = Math.max(1, Math.floor(x - r * 1.2));
+  const i1 = Math.min(W - 1, Math.ceil(x + r * 1.2));
+  let caved = false;
+  for (let i = i0; i <= i1; i++) {
+    const roofTop = y - r;
+    const surf = G.terrain[i];
+    if (roofTop > surf && roofTop - surf < 26) {
+      G.terrain[i] = Math.min(H, y + r * 0.8);
+      G.scorch[i] = Math.max(G.scorch[i], 0.45);
+      caved = true;
+    }
+  }
+  if (caved && rnd() < 0.35) spawnDebris(x, surfaceAt(x), 2, '#6b5a4a');
 }
 
 /* units follow the ground; falling causes damage */

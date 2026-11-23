@@ -1,6 +1,6 @@
 {
-  "pass": 53,
-  "total": 53,
+  "pass": 61,
+  "total": 61,
   "results": [
     {
       "name": "no external <script>/<link> resources",
@@ -25,12 +25,12 @@
     {
       "name": "render: canvas painted (non-blank)",
       "ok": true,
-      "detail": "{\"w\":1418,\"h\":802,\"mean\":27.9,\"unique\":59,\"brightPct\":0}"
+      "detail": "{\"w\":1418,\"h\":802,\"mean\":28.8,\"unique\":58,\"brightPct\":0}"
     },
     {
       "name": "render: sky gradient present",
       "ok": true,
-      "detail": "59 colour buckets"
+      "detail": "58 colour buckets"
     },
     {
       "name": "determinism: same seed -> same terrain",
@@ -153,6 +153,46 @@
       "detail": "alive false"
     },
     {
+      "name": "hud: wind readout enlarged (+85%)",
+      "ok": true,
+      "detail": "19.4px — \"WIND 5.1 KN →\""
+    },
+    {
+      "name": "hud: each weapon chip shows an icon, name and ammo",
+      "ok": true,
+      "detail": "HE/CLU/SGE/RAI/ROL — ∞/3/2/1/2"
+    },
+    {
+      "name": "hud: selected weapon has a plain-language line",
+      "ok": true,
+      "detail": "HE SHELL · Balanced high-explosive. · unlimited"
+    },
+    {
+      "name": "camera: blast never pushes the unit out of frame",
+      "ok": true,
+      "detail": "{\"margin\":204,\"z\":1,\"shake\":28,\"w\":1418,\"h\":802}"
+    },
+    {
+      "name": "camera: no zoom drift after a kill",
+      "ok": true,
+      "detail": "peak zoom 1"
+    },
+    {
+      "name": "arsenal: one preview per weapon",
+      "ok": true,
+      "detail": "HE SHELL/CLUSTER/SIEGE/RAILGUN/ROLLER"
+    },
+    {
+      "name": "arsenal: every preview renders",
+      "ok": true,
+      "detail": "5/5 painted"
+    },
+    {
+      "name": "arsenal: previews animate",
+      "ok": true,
+      "detail": "5/5 moving"
+    },
+    {
       "name": "death: every detonation is procedurally unique",
       "ok": true,
       "detail": "7/7 distinct — OVERLOAD:4:6:30:75 | VOID:2:3:25:87 | OVERLOAD:3:2:34:94"
@@ -255,7 +295,7 @@
     {
       "name": "soak: match kept progressing",
       "ok": true,
-      "detail": "ticks 10321"
+      "detail": "ticks 10431"
     },
     {
       "name": "no uncaught exceptions",

@@ -111,13 +111,14 @@ function planAI() {
   else if (me.ammo[1] > 0 && rnd() < 0.35) wi = 1;
   else if (me.ammo[4] > 0 && rnd() < 0.18) wi = 4;
   else if (me.ammo[3] > 0 && rnd() < 0.12) wi = 3;
+  else if (me.ammo[5] > 0 && rnd() < 0.2) wi = 5;
   if (me.ammo[wi] !== Infinity && me.ammo[wi] <= 0) wi = bestWeaponIndex(me);
 
   const tgt = { x: foe.x, y: foe.y - 16 };
   let sol = solveBallistic(me, tgt, G.wind, WEAPONS[wi]);
   if (wi !== 0 && (sol.blocked || sol.miss > 45)) {
-    // no viable line for this round — stop wasting it, engage with HE instead
-    wi = 0;
+    // a blocked line is exactly what the penetrator is for: bore through the ridge
+    wi = (sol.blocked && me.ammo[5] > 0 && wi !== 5) ? 5 : 0;
     sol = solveBallistic(me, tgt, G.wind, WEAPONS[wi]);
   }
   const jitterA = (rnd() - 0.5) * 2 * lvl.err * G.aiErr;

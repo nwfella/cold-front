@@ -123,7 +123,7 @@ function makeProjectile(team, x, y, vx, vy, w, extra) {
     x, y, vx, vy, team, w,
     r: w.r, dmg: w.dmg, color: w.color,
     age: 0, dist: 0, trail: [], smoke: 0,
-    split: !!w.split, flat: !!w.flat, roll: !!w.roll,
+    split: !!w.split, flat: !!w.flat, roll: !!w.roll, burrow: !!w.burrow,
     rolling: false, rollDist: 0, spin: rr(0, 6.28),
     dead: false
   };
@@ -174,6 +174,7 @@ function stepProjectiles(dt) {
     const p = list[i];
     p.age += dt;
     if (p.rolling) { stepRolling(p, dt, i); continue; }
+    if (p.burrowing) { if (!stepBurrow(p, dt)) list.splice(i, 1); continue; }
 
     const spd = Math.hypot(p.vx, p.vy);
     const steps = Math.max(1, Math.min(24, Math.ceil((spd * dt) / 7)));
@@ -201,6 +202,7 @@ function stepProjectiles(dt) {
       // --- terrain hit
       if (ny >= surfaceAt(nx)) {
         const gy = surfaceAt(nx);
+        if (p.burrow && !p.flat && !p.brokeOut) { enterBurrow(p, nx, gy); break; }
         if (p.roll && !p.flat) {
           p.rolling = true;
           p.y = gy - 5;
@@ -270,6 +272,83 @@ function stepProjectiles(dt) {
     G.mode = 'resolve';
     G.timers.resolve = 1.15;
   }
+}
+
+/* ---------------------------------------------------------------- burrow */
+function enterBurrow(p, x, gy) {
+  p.burrowing = true;
+  p.x = x;
+  p.y = gy + 10;
+  p.burySlope = clamp(p.vy / Math.max(60, Math.abs(p.vx)), -0.4, 0.4);
+  p.vy = 0;
+  p.burrowLeft = p.w.tunnel || 420;
+  p.trail.length = 0;
+  addShake(6);
+  if (Audio2.burrow) Audio2.burrow();
+  spawnDebris(x, gy, 14, '#5a4a3c');
+  addRing(x, gy, 3, 60, 0.35, 'rgba(205,224,255,.8)', 2.5);
+  pushTunnel(x, p.y, 15);
+}
+
+function stepBurrow(p, dt) {
+  const dir = p.vx >= 0 ? 1 : -1;
+  const speed = Math.max(150, Math.abs(p.vx));
+  const step = speed * dt;
+  p.x += dir * step;
+  p.y += p.burySlope * step;
+  p.burrowLeft -= step;
+  p.dist += step;
+  pushTunnel(p.x, p.y, 15);
+  const trailBack = G.tunnels[G.tunnels.length - 7];
+  if (trailBack) collapseRoofAt(trailBack.x, trailBack.y, 15);
+
+  if (rnd() < 0.45) {
+    const g = surfaceAt(p.x);
+    spawnParticle({
+      x: p.x + rr(-9, 9), y: g - 2, vx: rr(-24, 24), vy: rr(-70, -22),
+      life: rr(0.3, 0.65), max: 0.65, size: rr(3, 8),
+      color: 'rgba(130,118,105,.55)', kind: 'smoke', grav: -10, drag: 0.96,
+      rot: 0, vr: 0, grow: 9
+    });
+  }
+  if (rnd() < 0.3) addShake(1.4);
+
+  for (const t of G.players) {
+    if (!t.alive) continue;
+    if (Math.abs(p.x - t.x) < 34 && p.y > t.y - 34 && p.y < t.y + 22) {
+      explode(p.x, p.y, p, t);
+      return false;
+    }
+  }
+
+  const g = surfaceAt(p.x);
+  if (p.y < g - 3) {                    // broke out into open air
+    p.burrowing = false;
+    p.brokeOut = true;                  // one bore per round
+    p.vy = p.burySlope * speed * 0.5;
+    addRing(p.x, p.y, 4, 84, 0.4, 'rgba(205,224,255,.85)', 3);
+    spawnDebris(p.x, g, 15, '#5a4a3c');
+    Audio2.boom(false, 16);
+    pushLog(tagOf(G.players[p.team]) + ' \u25B8 BREAK THROUGH', 'hit');
+    return true;
+  }
+  if (p.burrowLeft <= 0) { explodeUnder(p.x, p.y, p); return false; }
+  if (p.x < -80 || p.x > W + 80 || p.y > H + 40) return false;
+  return true;
+}
+
+/* ran out of rock: muffled thump, collapses the hill, spares the tanks */
+function explodeUnder(x, y, p) {
+  const gy = surfaceAt(x);
+  carve(x, gy - 4, p.r * 0.8);
+  for (let i = 0; i < 3; i++) addRing(x, y, 6, 90 + i * 45, 0.5 + i * 0.1, 'rgba(180,200,230,.55)', 2);
+  addShake(16);
+  G.cam.flash = Math.max(G.cam.flash, 0.42);
+  Audio2.boom(true, 30);
+  spawnDebris(x, gy, 20, '#5a4a3c');
+  px(x, gy - 6, 18, { speed: 250, spread: 2.2, angle: -1.57, life: 0.9, size: 3, colors: ['#cfd8e6', '#8a94a6'], grav: 320, drag: 0.96 });
+  pushLog(tagOf(G.players[p.team]) + ' \u25B8 DUD \u2014 ROCK TOO THICK', 'miss');
+  G.dots.push({ x, y: gy, r: 46, team: p.team, t: 0 });
 }
 
 function stepRolling(p, dt, idx) {

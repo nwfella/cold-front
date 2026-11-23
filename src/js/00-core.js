@@ -125,6 +125,11 @@ const WEAPONS = [
     id: 'roller', name: 'ROLLER', short: 'ROL', keys: '5',
     ammo: 2, r: 86, dmg: 50, spd: 0.96, color: '#e0a6ff', roll: true,
     desc: 'Bounces off terrain and rolls into the target.'
+  },
+  {
+    id: 'pen', name: 'PENETRATOR', short: 'PEN', keys: '6',
+    ammo: 1, r: 96, dmg: 58, spd: 0.9, color: '#c9d8ea', burrow: true, tunnel: 420,
+    desc: 'Drills through the ridge and breaks out on the far side.'
   }
 ];
 
@@ -163,6 +168,7 @@ const G = {
   mtn: [], stars: [], clouds: [],
   meteor: null,
   kill: null,
+  tunnels: [],
   roundSeed: 0,
   forceSeed: null,
   matchMode: 'ai',

@@ -176,6 +176,22 @@ function drawTerrain(ctx) {
     ctx.fillStyle = i % 3 ? 'rgba(255,255,255,.5)' : 'rgba(0,0,0,.6)';
     ctx.fillRect(x, y, 1.6, 1.6);
   }
+  // bores: lit rim, black core
+  if (G.tunnels && G.tunnels.length > 1) {
+    ctx.globalAlpha = 1;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(G.tunnels[0].x, G.tunnels[0].y);
+    for (let i = 1; i < G.tunnels.length; i++) ctx.lineTo(G.tunnels[i].x, G.tunnels[i].y);
+    ctx.strokeStyle = 'rgba(130,152,180,.20)';
+    ctx.lineWidth = 38;
+    ctx.stroke();
+    ctx.strokeStyle = '#04060a';
+    ctx.lineWidth = 29;
+    ctx.stroke();
+  }
+
   // scorch
   ctx.globalAlpha = 1;
   for (let x = 0; x <= W; x += 2) {

@@ -98,6 +98,10 @@ const Audio2 = (() => {
       tone(78, 18, 0.8 * s, 0.22 * s, 'triangle');
     },
     crumble() { noise(0.7, 0.17, 'lowpass', 520, 0.7, 0.25); },
+    burrow() {
+      noise(0.6, 0.16, 'lowpass', 340, 0.8, 0.35);
+      tone(110, 62, 0.5, 0.12, 'sawtooth');
+    },
     roll() { noise(0.22, 0.1, 'bandpass', 340, 2.5, 0.5); },
     tick() { tone(880, 620, 0.06, 0.07, 'square'); },
     turn() { tone(520, 760, 0.12, 0.1, 'sine'); setTimeout(() => tone(780, 1040, 0.14, 0.08, 'sine'), 90); },

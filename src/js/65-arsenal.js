@@ -7,11 +7,12 @@
 const ARS = { open: false, raf: 0, items: [], last: 0 };
 
 const ARSENAL_COPY = {
-  he: { role: 'General purpose', line: 'Balanced high-explosive. Enough to reshape a ridge, cheap enough to fire every turn.' },
-  cluster: { role: 'Area denial', line: 'Splits into three bomblets at the apex. Punishes a tank sitting in a crater.' },
-  siege: { role: 'Siege', line: 'Slow and enormous. Carves a bowl out of the hill and anything standing on it.' },
-  rail: { role: 'Line of sight', line: 'No gravity, no wind. The bore either crosses the target or the round is wasted.' },
-  roller: { role: 'Finisher', line: 'Lands short, then rolls along the terrain into the target. Beats a ridge that blocks a lob.' }
+  he: { role: 'General purpose', line: 'Balanced high-explosive — reshapes a ridge, cheap enough to fire every turn.' },
+  cluster: { role: 'Area denial', line: 'Splits into three bomblets at the apex. Punishes a crater-camper.' },
+  siege: { role: 'Siege', line: 'Slow and enormous. Carves a bowl out of the hill and anything on it.' },
+  rail: { role: 'Line of sight', line: 'No gravity, no wind. The bore either crosses the target or it is wasted.' },
+  roller: { role: 'Finisher', line: 'Lands short, then rolls along the terrain into the target.' },
+  pen: { role: 'Bunker buster', line: 'Bores through the ridge and breaks out the far side. Thick rock stops it.' }
 };
 
 const G_THUMB = 190;      // thumbnail gravity
@@ -57,7 +58,7 @@ function buildArsenal() {
       w, cv, ctx: cv.getContext('2d'),
       cw: 180, ch: 84,
       t: 0, cycle: 2.6, launchAngle: 45,
-      proj: null, bomblets: [], trail: [], parts: [], rings: [], flash: 0
+      proj: null, bomblets: [], trail: [], parts: [], rings: [], flash: 0, tunnel: []
     };
     resetThumb(it);
     return it;
@@ -126,7 +127,7 @@ function stepThumb(it, dt) {
 
   const p = it.proj;
   if (p && !p.dead) {
-    if (!p.flat) p.vy += g * dt;
+    if (!p.flat && !p.rolling) p.vy += g * dt;
     p.x += p.vx * dt;
     p.y += p.vy * dt;
     it.trail.push({ x: p.x, y: p.y });
@@ -143,6 +144,15 @@ function stepThumb(it, dt) {
     }
 
     // roller: touch down then run along the ground
+    // penetrator: touch down, then bore straight through the ridge
+    if (it.w.burrow && !p.rolling && p.vy > 0 && p.y >= gy - 2) {
+      p.rolling = true;
+      p.y = gy + 6;
+      p.vy = 0;
+      p.vx = 76;
+      it.tunnel = [{ x: p.x, y: p.y }];
+    }
+
     if (it.w.roll && !p.rolling && p.vy > 0 && p.y >= gy - 2) {
       p.rolling = true;
       p.y = gy - 2;
@@ -151,7 +161,15 @@ function stepThumb(it, dt) {
       thumbBurst(it, p.x, gy - 2, 0.45, false);
     }
 
-    if (p.y >= gy - 2 && (!it.w.roll || p.rolling)) {
+    if (it.w.burrow && p.rolling) {
+      if (it.tunnel) it.tunnel.push({ x: p.x, y: p.y + 6 });
+      if (p.x >= THUMB_TX - 8) {
+        thumbBurst(it, p.x, gy - 3, 1.3, true);
+        p.dead = true;
+      }
+    }
+
+    if (p.y >= gy - 2 && !it.w.burrow && (!it.w.roll || p.rolling)) {
       thumbBurst(it, p.x, gy - 3, it.w.id === 'siege' ? 1.5 : 1, true);
       p.dead = true;
     }
@@ -208,6 +226,34 @@ function drawThumb(it) {
   c.moveTo(0, gy + 0.5);
   for (let x = 0; x <= cw; x += 6) c.lineTo(x, gy + 0.5 - Math.sin(x * 0.09) * 1.2);
   c.stroke();
+
+  // a ridge for the penetrator to bore through
+  if (it.w.burrow) {
+    c.fillStyle = '#16202c';
+    c.strokeStyle = 'rgba(255,170,120,.32)';
+    c.lineWidth = 1;
+    c.beginPath();
+    c.moveTo(74, gy + 1);
+    c.quadraticCurveTo(108, gy - 30, 146, gy + 1);
+    c.closePath();
+    c.fill();
+    c.stroke();
+  }
+
+  // the bore itself
+  if (it.tunnel && it.tunnel.length > 1) {
+    c.lineCap = 'round';
+    c.lineJoin = 'round';
+    c.beginPath();
+    c.moveTo(it.tunnel[0].x, it.tunnel[0].y);
+    for (let i = 1; i < it.tunnel.length; i++) c.lineTo(it.tunnel[i].x, it.tunnel[i].y);
+    c.strokeStyle = 'rgba(150,180,220,.22)';
+    c.lineWidth = 9;
+    c.stroke();
+    c.strokeStyle = '#05070b';
+    c.lineWidth = 6;
+    c.stroke();
+  }
 
   // launcher
   c.save();

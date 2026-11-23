@@ -135,6 +135,7 @@ window.ART = {
   setHp(i, v) { G.players[i].hp = v; updateHud(); return G.players[i].hp; },
   setTurn(i) { G.turn = i; G.mode = 'aim'; updateHud(); return G.turn; },
   meteorAt(x) { G.meteor = { x: x === undefined ? 800 : x, t: 0.15 }; return G.meteor; },
+  setTunnelBudget(u) { WEAPONS[5].tunnel = u; return WEAPONS[5].tunnel; },
   detonate(i) {
     const p = G.players[i || 0];
     if (!p) return null;
